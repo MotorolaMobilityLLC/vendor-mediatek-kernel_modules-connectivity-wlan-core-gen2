@@ -22,6 +22,12 @@
 ********************************************************************************
 */
 #include "gl_typedef.h"
+
+#if (KERNEL_VERSION(4, 9, 0) <= LINUX_VERSION_CODE)
+typedef unsigned int CMB_STUB_AIF_X;
+typedef unsigned int CMB_STUB_AIF_CTRL;
+#endif
+
 #include "wmt_exp.h"
 
 /*******************************************************************************

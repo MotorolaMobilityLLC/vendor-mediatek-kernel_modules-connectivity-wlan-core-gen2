@@ -993,7 +993,7 @@ VOID kalP2PIndicateScanDone(IN P_GLUE_INFO_T prGlueInfo, IN BOOLEAN fgIsAbort)
 			scanReportBss2Cfg80211(prGlueInfo->prAdapter, BSS_TYPE_P2P_DEVICE, NULL);
 
 			DBGLOG(INIT, TRACE, "DBG:p2p_cfg_scan_done\n");
-			cfg80211_scan_done(prScanRequest, fgIsAbort);
+			kalCfg80211ScanDone(prScanRequest, fgIsAbort);
 		}
 
 	} while (FALSE);

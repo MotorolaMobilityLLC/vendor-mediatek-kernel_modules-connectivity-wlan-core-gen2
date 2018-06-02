@@ -1119,7 +1119,7 @@ static int p2pStop(IN struct net_device *prDev)
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 	if (prScanRequest)
-		cfg80211_scan_done(prScanRequest, TRUE);
+		kalCfg80211ScanDone(prScanRequest, TRUE);
 #if 0
 
 	/* 1. stop TX queue */

@@ -11,8 +11,14 @@
 
 #ifndef _GL_TYPEDEF_H
 #define _GL_TYPEDEF_H
-
+#include "linux/version.h"
 #include "osal_typedef.h"
+
+#if (KERNEL_VERSION(4, 9, 0) <= LINUX_VERSION_CODE)
+#define IEEE80211_BAND_2GHZ NL80211_BAND_2GHZ
+#define IEEE80211_BAND_5GHZ NL80211_BAND_5GHZ
+#define IEEE80211_BAND_60GHZ NL80211_BAND_60GHZ
+#endif
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
