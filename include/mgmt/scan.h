@@ -390,19 +390,6 @@ typedef struct _GSCAN_BUCKET_T {
 					 * if this is too low, the firmware should choose to generate
 					 * results as fast as it can instead of failing the command
 					*/
-	 /* report_events semantics -
-	  *  This is a bit field; which defines following bits -
-	  *  REPORT_EVENTS_EACH_SCAN	=> report a scan completion event after scan. If this is not set
-	  *				    then scan completion events should be reported if
-	  *				    report_threshold_percent or report_threshold_num_scans is
-	  *				    reached.
-	  *  REPORT_EVENTS_FULL_RESULTS => forward scan results (beacons/probe responses + IEs)
-	  *				    in real time to HAL, in addition to completion events
-	  *				    Note: To keep backward compatibility, fire completion
-	  *				    events regardless of REPORT_EVENTS_EACH_SCAN.
-	  *  REPORT_EVENTS_NO_BATCH	=> controls if scans for this bucket should be placed in the
-	  *				    history buffer
-	  */
 	UINT_8 ucReportFlag;
 	UINT_8 ucMaxBucketFreqMultiple; /* max_period / base_period */
 	UINT_8 ucStepCount;
