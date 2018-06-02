@@ -832,7 +832,9 @@ int mtk_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request
 	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
-	if (!prGlueInfo->prAdapter->fgEnCfg80211Scan) {
+	if ((!prGlueInfo->prAdapter->fgEnCfg80211Scan) &&
+			(kalGetMediaStateIndicated(prGlueInfo) ==
+			PARAM_MEDIA_STATE_CONNECTED)) {
 		DBGLOG(SCN, WARN, "Disable cfg80211 scan.\n");
 		return -EBUSY;
 	}
@@ -2001,7 +2003,9 @@ mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
 
 	ASSERT(prGlueInfo);
 
-	if (!prGlueInfo->prAdapter->fgEnCfg80211Scan) {
+	if ((!prGlueInfo->prAdapter->fgEnCfg80211Scan) &&
+			(kalGetMediaStateIndicated(prGlueInfo) ==
+			PARAM_MEDIA_STATE_CONNECTED)) {
 		DBGLOG(SCN, WARN, "Disable cfg80211 sched scan.\n");
 		return -EBUSY;
 	}
