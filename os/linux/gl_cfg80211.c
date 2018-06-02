@@ -1207,10 +1207,17 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 				DBGLOG(REQ, WARN, "invalid auth mode (%d)\n", sme->crypto.akm_suites[0]);
 				return -EINVAL;
 			}
+#if CFG_SUPPORT_HOTSPOT_2_0
+		} else if (prGlueInfo->rWpaInfo.u4WpaVersion
+				== IW_AUTH_WPA_VERSION_DISABLED &&
+				sme->crypto.akm_suites[0] == WLAN_AKM_SUITE_OSEN) {
+			eAuthMode = AUTH_MODE_WPA_OSEN;
+			u4AkmSuite = WFA_AKM_SUITE_OSEN;
+#endif
 		}
 	}
 
-	if (prGlueInfo->rWpaInfo.u4WpaVersion == IW_AUTH_WPA_VERSION_DISABLED) {
+	if (prGlueInfo->rWpaInfo.u4WpaVersion == IW_AUTH_WPA_VERSION_DISABLED && eAuthMode != AUTH_MODE_WPA_OSEN) {
 		switch (prGlueInfo->rWpaInfo.u4AuthAlg) {
 		case IW_AUTH_ALG_OPEN_SYSTEM:
 			eAuthMode = AUTH_MODE_OPEN;
