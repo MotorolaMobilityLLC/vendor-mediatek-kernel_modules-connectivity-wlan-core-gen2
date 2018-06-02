@@ -465,7 +465,11 @@
  *------------------------------------------------------------------------------
  */
 #define CFG_MULTI_SSID_SCAN			1
-#define CFG_NLO_MSP 0 /* NLO/PNO Multiple Scan Plan */
+#if CFG_TC1_FEATURE
+#define CFG_NLO_MSP 1 /* NLO/PNO Multiple Scan Plan */
+#else
+#define CFG_NLO_MSP 0
+#endif
 #define CFG_SUPPORT_SCHED_SCN_SSID_SETS		1 /*Sched-scan support hidden SSID*/
 #define CFG_SCAN_SSID_MAX_NUM                   (10)
 
