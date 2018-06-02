@@ -2593,8 +2593,16 @@ VOID qmProcessPktWithReordering(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb,
 	}
 	/* Case 3: Fall behind */
 	else {
+#if CFG_SUPPORT_GAMING_MODE || CFG_SUPPORT_OSHARE
+		BOOLEAN fgIsEnable = FALSE;
 #if CFG_SUPPORT_GAMING_MODE
-		if (prAdapter->fgEnGamingMode) {
+		fgIsEnable |= prAdapter->fgEnGamingMode;
+#endif
+#if CFG_SUPPORT_OSHARE
+		fgIsEnable |= (prAdapter->fgEnOshareMode
+			&& HIF_RX_HDR_GET_NETWORK_IDX(prSwRfb->prHifRxHdr) == NETWORK_TYPE_P2P_INDEX);
+#endif
+		if (fgIsEnable) {
 			PUINT_8 pucData = (PUINT_8) prSwRfb->pvHeader;
 			UINT_16 u2Etype = (pucData[ETH_TYPE_LEN_OFFSET] << 8) | (pucData[ETH_TYPE_LEN_OFFSET + 1]);
 

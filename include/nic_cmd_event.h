@@ -161,6 +161,9 @@ typedef enum _ENUM_CMD_ID_T {
 #if CFG_SUPPORT_GAMING_MODE
 	CMD_ID_SET_GAMING_MODE = 0x8B,	/* 0x8B (Set) */
 #endif /* CFG_SUPPORT_GAMING_MODE */
+#if CFG_SUPPORT_OSHARE
+		CMD_ID_SET_OSHARE_MODE = 0x8C,
+#endif
 	CMD_ID_WIFI_LOG_LEVEL  = 0x8D,	/* 0x8D (Set / Query) */
 	CMD_ID_WFC_KEEP_ALIVE = 0xa0,	/* 0xa0(Set) */
 	CMD_ID_RSSI_MONITOR = 0xa1,	/* 0xa1(Set) */
