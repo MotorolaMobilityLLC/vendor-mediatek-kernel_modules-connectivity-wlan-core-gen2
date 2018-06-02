@@ -314,8 +314,6 @@ struct _P2P_FSM_INFO_T {
 
 	enum _ENUM_P2P_DEV_EXT_LISTEN_T eListenExted;
 
-	/* GO start and scan its channel first. */
-	BOOLEAN fgIsFirstGOScan;
 	BOOLEAN fgIsChannelExtended;
 };
 

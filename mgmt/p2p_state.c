@@ -22,17 +22,7 @@ p2pStateInit_IDLE(IN P_ADAPTER_T prAdapter,
 		ASSERT_BREAK((prAdapter != NULL) &&
 			     (prP2pFsmInfo != NULL) && (prP2pBssInfo != NULL) && (peNextState != NULL));
 
-		if ((prP2pBssInfo->eIntendOPMode == OP_MODE_ACCESS_POINT)
-		    && IS_NET_PWR_STATE_ACTIVE(prAdapter, NETWORK_TYPE_P2P_INDEX)) {
-			prChnlReqInfo = &prP2pFsmInfo->rChnlReqInfo;
-
-			fgIsTransOut = TRUE;
-			prChnlReqInfo->eChannelReqType = CHANNEL_REQ_TYPE_GO_START_BSS;
-
-			*peNextState = P2P_STATE_REQING_CHANNEL;
-
-		} else
-			cnmTimerStartTimer(prAdapter, &(prAdapter->rP2pFsmTimeoutTimer), P2P_AP_CHNL_HOLD_TIME_MS);
+		cnmTimerStartTimer(prAdapter, &(prAdapter->rP2pFsmTimeoutTimer), P2P_AP_CHNL_HOLD_TIME_MS);
 
 	} while (FALSE);
 

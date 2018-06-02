@@ -475,7 +475,6 @@ VOID p2pFsmRunEventScanDone(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 		}
 
 		prScanReqInfo->fgIsScanRequest = FALSE;
-		prP2pFsmInfo->fgIsFirstGOScan = FALSE;
 
 		p2pFsmStateTransition(prAdapter, prP2pFsmInfo, eNextState);
 
@@ -1110,19 +1109,8 @@ VOID p2pFsmRunEventStartAP(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 				prChnlReqInfo->eBand = prP2pSpecificBssInfo->eRfBand;
 				prChnlReqInfo->u4MaxInterval = P2P_AP_CHNL_HOLD_TIME_MS;
 				prChnlReqInfo->eChannelReqType = CHANNEL_REQ_TYPE_GO_START_BSS;
-				prP2pFsmInfo->fgIsFirstGOScan = TRUE;
 
-				DBGLOG(P2P, INFO, "p2pFsmRunEventStartAP GO Scan\n");
-				/*Set scan only GO operation channel*/
-				prScanReqInfo->ucNumChannelList = 1;
-				prScanReqInfo->eScanType = SCAN_TYPE_ACTIVE_SCAN;
-				prScanReqInfo->eChannelSet = SCAN_CHANNEL_SPECIFIED;
-				prScanReqInfo->arScanChannelList[0].ucChannelNum =
-				prP2pSpecificBssInfo->ucPreferredChannel;
-				prScanReqInfo->u4BufLength = 0; /* Prevent other P2P ID in IE. */
-				prScanReqInfo->fgIsAbort = TRUE;
-
-				eNextState = P2P_STATE_SCAN;
+				eNextState = P2P_STATE_REQING_CHANNEL;
 			}
 
 			prP2pFsmInfo->eCNNState = P2P_CNN_NORMAL;
