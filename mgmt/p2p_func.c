@@ -2002,6 +2002,27 @@ BOOLEAN p2pFuncValidateProbeReq(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb,
 
 }				/* end of p2pFuncValidateProbeReq() */
 
+static void
+p2pFunAbortOngoingScan(IN P_ADAPTER_T prAdapter)
+{
+	P_SCAN_INFO_T prScanInfo;
+
+	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
+	if (prScanInfo->eCurrentState != SCAN_STATE_SCANNING)
+		return;
+
+	switch (prScanInfo->rScanParam.eNetTypeIndex) {
+	case NETWORK_TYPE_AIS_INDEX:
+		aisFsmStateAbort_SCAN(prAdapter);
+		break;
+	case NETWORK_TYPE_P2P_INDEX:
+		p2pFsmRunEventScanAbort(prAdapter, NULL);
+		break;
+	default:
+		break;
+	}
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
 * @brief This function will validate the Rx Probe Request Frame and then return
@@ -2037,7 +2058,7 @@ VOID p2pFuncValidateRxActionFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRf
 			if (prActFrame->ucAction == 0x9 && (*(pucVendor + 4)) == P2P_GO_NEG_REQ) {
 				/* Abort scan while receiving P2P_GO_NEG_REQ */
 				DBGLOG(P2P, INFO, "p2pFuncValidateRxActionFrame: P2P_GO_NEG_REQ");
-				p2pFsmRunEventScanAbort(prAdapter, NULL);
+				p2pFunAbortOngoingScan(prAdapter);
 			}
 			break;
 		default:
