@@ -439,6 +439,7 @@ p2pStateAbort_GC_JOIN(IN P_ADAPTER_T prAdapter,
 		ASSERT_BREAK((prAdapter != NULL) && (prP2pFsmInfo != NULL) && (prJoinInfo != NULL));
 
 		if (prJoinInfo->fgIsJoinComplete == FALSE) {
+			P_BSS_DESC_T prBssDesc = (P_BSS_DESC_T) NULL;
 
 			prJoinAbortMsg =
 			    (P_MSG_JOIN_ABORT_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(MSG_JOIN_ABORT_T));
@@ -451,6 +452,11 @@ p2pStateAbort_GC_JOIN(IN P_ADAPTER_T prAdapter,
 			prJoinAbortMsg->rMsgHdr.eMsgId = MID_P2P_SAA_FSM_ABORT;
 			prJoinAbortMsg->ucSeqNum = prJoinInfo->ucSeqNumOfReqMsg;
 			prJoinAbortMsg->prStaRec = prJoinInfo->prTargetStaRec;
+
+			/* Reset the flag to clear target BSS state */
+			prBssDesc = prP2pFsmInfo->prTargetBss;
+			if (prBssDesc != NULL)
+				prBssDesc->fgIsConnecting = FALSE;
 
 			mboxSendMsg(prAdapter, MBOX_ID_0, (P_MSG_HDR_T) prJoinAbortMsg, MSG_SEND_METHOD_BUF);
 
