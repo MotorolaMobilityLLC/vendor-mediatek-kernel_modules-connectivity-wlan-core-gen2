@@ -10543,6 +10543,36 @@ OUT PUINT_32    pu4SetInfoLen
 
 }
 
+#if CFG_SUPPORT_OSHARE
+WLAN_STATUS
+wlanoidSetOshareMode(
+IN  P_ADAPTER_T prAdapter,
+IN  PVOID       pvSetBuffer,
+IN  UINT_32     u4SetBufferLen,
+OUT PUINT_32    pu4SetInfoLen
+)
+{
+	if (!prAdapter || !pvSetBuffer)
+		return WLAN_STATUS_INVALID_DATA;
+
+	DBGLOG(OID, TRACE, "wlanoidSetOshareMode\n");
+
+	return wlanSendSetQueryCmd(
+			prAdapter,/* prAdapter */
+			CMD_ID_SET_OSHARE_MODE,/* ucCID */
+			TRUE,/* fgSetQuery */
+			FALSE,/* fgNeedResp */
+			TRUE,/* fgIsOid */
+			nicCmdEventSetCommon,/* pfCmdDoneHandler*/
+			nicOidCmdTimeoutCommon,/* pfCmdTimeoutHandler */
+			u4SetBufferLen,/* u4SetQueryInfoLen */
+			(PUINT_8) pvSetBuffer,/* pucInfoBuffer */
+			NULL,/* pvSetQueryBuffer */
+			0/* u4SetQueryBufferLen */
+			);
+}
+#endif
+
 WLAN_STATUS
 wlanoidNotifyFwSuspend(IN P_ADAPTER_T prAdapter,
 		       IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen, OUT PUINT_32 pu4SetInfoLen)

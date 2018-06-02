@@ -761,7 +761,9 @@ wlanAdapterStart(IN P_ADAPTER_T prAdapter,
 #if CFG_SUPPORT_GAMING_MODE
 		prAdapter->fgEnGamingMode = FALSE;
 #endif
-
+#if CFG_SUPPORT_OSHARE
+		prAdapter->fgEnOshareMode = FALSE;
+#endif
 	} while (FALSE);
 
 	if (u4Status == WLAN_STATUS_SUCCESS) {

@@ -3349,6 +3349,46 @@ INT_32 mtk_cfg80211_process_str_cmd(P_GLUE_INFO_T prGlueInfo, PUINT_8 cmd, INT_3
 					TRUE,
 					FALSE,
 					&u4SetInfoLen);
+	} else if (kalStrniCmp(cmd, "OSHAREMOD ", 10) == 0) {
+#if CFG_SUPPORT_OSHARE
+		struct OSHARE_MODE_T cmdBuf;
+		struct OSHARE_MODE_T *pCmdHeader = NULL;
+		struct OSHARE_MODE_SETTING_V1_T *pCmdData = NULL;
+
+		kalMemZero(&cmdBuf, sizeof(cmdBuf));
+
+		pCmdHeader = &cmdBuf;
+		pCmdHeader->cmdVersion = OSHARE_MODE_CMD_V1;
+		pCmdHeader->cmdType = 1; /*1-set   0-query*/
+		pCmdHeader->magicCode = OSHARE_MODE_MAGIC_CODE;
+		pCmdHeader->cmdBufferLen = MAX_OSHARE_MODE_LENGTH;
+
+		pCmdData = (struct OSHARE_MODE_SETTING_V1_T *)&(pCmdHeader->buffer[0]);
+		pCmdData->osharemode = *(PUINT_8)(cmd + 10) - '0';
+
+		DBGLOG(REQ, INFO, "cmd=%s, osharemode=%u\n", cmd, pCmdData->osharemode);
+
+		rStatus = kalIoctl(prGlueInfo,
+						wlanoidSetOshareMode,
+						&cmdBuf,
+						sizeof(struct OSHARE_MODE_T),
+						FALSE,
+						FALSE,
+						TRUE,
+						FALSE,
+						&u4SetInfoLen);
+		if (rStatus == WLAN_STATUS_SUCCESS && prGlueInfo) {
+			P_ADAPTER_T prAdapter = prGlueInfo->prAdapter;
+
+			if (prAdapter) {
+				prAdapter->fgEnOshareMode = pCmdData->osharemode;
+				DBGLOG(REQ, INFO, "Set osharemode=%u\n", prAdapter->fgEnOshareMode);
+			}
+		}
+#else
+		DBGLOG(REQ, WARN, "not support OSHAREMOD\n");
+		return -EOPNOTSUPP;
+#endif
 	} else if (kalStrniCmp(cmd, "NEIGHBOR-REQUEST", 16) == 0) {
 		PUINT_8 pucSSID = NULL;
 		UINT_32 u4SSIDLen = 0;
