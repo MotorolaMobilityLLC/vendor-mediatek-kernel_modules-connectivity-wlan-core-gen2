@@ -1,9 +1,11 @@
 ###############################################################################
 # Necessary Check
 
-ifneq ($(KERNEL_OUT),)
-    ccflags-y += -imacros $(KERNEL_OUT)/include/generated/autoconf.h
+ifeq ($(AUTOCONF_H),)
+    $(error AUTOCONF_H is not defined)
 endif
+
+ccflags-y += -imacros $(AUTOCONF_H)
 
 ifeq ($(CONFIG_MTK_COMBO_CHIP),)
     $(error CONFIG_MTK_COMBO_CHIP not defined)
@@ -20,9 +22,9 @@ KBUILD_MODPOST_FAIL_ON_WARNINGS := y
 CONFIG_MTK_COMBO_WIFI_HIF=sdio
 CONFIG_MTK_WIFI_ONLY=n
 
-ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/include
-ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
-ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/base/power/$(MTK_PLATFORM)
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/include
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/$(MTK_PLATFORM)
 # ---------------------------------------------------
 # Compile Options
 # ---------------------------------------------------
@@ -82,9 +84,9 @@ endif
 
 ifeq ($(CONFIG_MTK_TC1_FEATURE), y)
 ifeq ($(CONFIG_MTK_GPT_SCHEME_SUPPORT), y)
-    ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/tc1_interface/gpt
+    ccflags-y += -I$(srctree)/drivers/misc/mediatek/tc1_interface/gpt
 else
-    ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/tc1_interface/pmt
+    ccflags-y += -I$(srctree)/drivers/misc/mediatek/tc1_interface/pmt
 endif
     ccflags-y += -DCFG_TC1_FEATURE=1
     ccflags-y += -DCFG_SUPPORT_CFG_FILE=1
@@ -147,13 +149,13 @@ ccflags-y += -D_HIF_SDIO=1
 ccflags-y += -DDBG=0
 ccflags-y += -I$(src)/os -I$(src)/os/linux/include -I$(src)/os/linux/hif/ahb/include
 ccflags-y += -I$(src)/include -I$(src)/include/nic -I$(src)/include/mgmt
-ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/base/power/include/
-ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/base/power/$(MTK_PLATFORM)/
-ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/emi/submodule
-ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/emi/$(MTK_PLATFORM)
-ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/connectivity/common
-ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/include/mt-plat
-ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include/mach/
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/$(MTK_PLATFORM)/
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/emi/submodule
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/emi/$(MTK_PLATFORM)
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/connectivity/common
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include/mach/
 ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/common/common_main/include
 ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/common/common_main/linux/include
 
@@ -171,7 +173,7 @@ OS_DIR      := os/linux/
 HIF_DIR	    := os/linux/hif/ahb/
 NIC_DIR     := nic/
 MGMT_DIR    := mgmt/
-FWCFG_DIR   := $(KERNEL_DIR)/drivers/misc/mediatek/connectivity/wlan/gen2/$(MTK_PROJECT)/
+FWCFG_DIR   := $(srctree)/drivers/misc/mediatek/connectivity/wlan/gen2/$(MTK_PROJECT)/
 DMA_DIR     := ../../../../platform/$(call lc,$(MTK_PLATFORM))/kernel/drivers/wifi/
 PLAT_DIR    := os/linux/plat/$(MTK_PLATFORM)/
 HIF_AHB_PDMA := $(HIF_DIR)$(MTK_PLATFORM)/
@@ -204,7 +206,7 @@ OS_OBJS :=	$(OS_DIR)gl_init.o \
 			$(OS_DIR)gl_rst.o \
 			$(OS_DIR)gl_cfg80211.o \
 			$(OS_DIR)gl_vendor.o \
-			$(OS_DIR)platform.o		\
+			$(OS_DIR)platform.o \
 			$(OS_DIR)gl_proc.o
 
 MGMT_OBJS := $(MGMT_DIR)ais_fsm.o \
