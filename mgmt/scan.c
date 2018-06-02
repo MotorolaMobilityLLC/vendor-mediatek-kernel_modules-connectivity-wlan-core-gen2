@@ -2693,19 +2693,24 @@ static WLAN_STATUS __scanProcessBeaconAndProbeResp(IN P_ADAPTER_T prAdapter, IN 
 		if (prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE || prBssDesc->eBSSType == BSS_TYPE_IBSS) {
 			/* for AIS, send to host */
 			prAdapter->rWlanInfo.u4ScanDbgTimes3++;
+			BOOLEAN fgAddToScanResult = FALSE;
+
 			if (prConnSettings->fgIsScanReqIssued || prAdapter->rWifiVar.rScanInfo.fgNloScanning
 #if CFG_SUPPORT_SCN_PSCN
 			|| prAdapter->rWifiVar.rScanInfo.fgPscnOngoing
 #endif
 			) {
-				BOOLEAN fgAddToScanResult;
-
 				fgAddToScanResult = scanCheckBssIsLegal(prAdapter, prBssDesc);
 				prAdapter->rWlanInfo.u4ScanDbgTimes4++;
 
 				if (fgAddToScanResult == TRUE)
 					rStatus = scanAddScanResult(prAdapter, prBssDesc, prSwRfb);
 			}
+			if (fgAddToScanResult == FALSE) {
+				kalMemZero(prBssDesc->aucRawBuf, CFG_RAW_BUFFER_SIZE);
+				prBssDesc->u2RawLength = 0;
+			}
+
 		}
 #if CFG_ENABLE_WIFI_DIRECT
 		if (prAdapter->fgIsP2PRegistered)
