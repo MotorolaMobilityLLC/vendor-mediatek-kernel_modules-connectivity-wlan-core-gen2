@@ -516,6 +516,10 @@ VOID p2pFsmRunEventChGrant(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 		ucTokenID = prMsgChGrant->ucTokenID;
 		prP2pFsmInfo->u4GrantInterval = prMsgChGrant->u4GrantInterval;
 
+		/* Reset p2p conn state & channel extended flag */
+		prP2pFsmInfo->fgIsChannelExtended = FALSE;
+		prP2pFsmInfo->eCNNState = P2P_CNN_NORMAL;
+
 		prChnlReqInfo = &(prP2pFsmInfo->rChnlReqInfo);
 
 		if (ucTokenID == prChnlReqInfo->ucSeqNumOfChReq) {
@@ -845,14 +849,22 @@ VOID p2pFsmRunEventFsmTimeout(IN P_ADAPTER_T prAdapter, IN ULONG ulParam)
 					"Current P2P State %d is unexpected for FSM timeout event.\n",
 					prP2pFsmInfo->eCurrentState);
 #else
+			if (prP2pFsmInfo->fgIsChannelExtended == TRUE) {
+				prP2pFsmInfo->fgIsChannelExtended = FALSE;
+				p2pFsmStateTransition(prAdapter, prP2pFsmInfo, P2P_STATE_IDLE);
+				break;
+			}
 			switch (prP2pFsmInfo->eCNNState) {
 			case P2P_CNN_GO_NEG_REQ:
 			case P2P_CNN_GO_NEG_RESP:
 			case P2P_CNN_INVITATION_REQ:
 			case P2P_CNN_DEV_DISC_REQ:
 			case P2P_CNN_PROV_DISC_REQ:
-				DBGLOG(P2P, INFO, "P2P: waiting response, re-enter channel on hand state\n");
-				p2pFsmStateTransition(prAdapter, prP2pFsmInfo, P2P_STATE_REQING_CHANNEL);
+				DBGLOG(P2P, INFO,
+					"Re-enter channel on hand state, eCNNState: %d\n",
+					prP2pFsmInfo->eCNNState);
+				prP2pFsmInfo->fgIsChannelExtended = TRUE;
+				p2pFsmStateTransition(prAdapter, prP2pFsmInfo, P2P_STATE_CHNL_ON_HAND);
 				break;
 
 			case P2P_CNN_NORMAL:
@@ -2723,6 +2735,31 @@ VOID p2pFsmNotifyTxStatus(IN P_ADAPTER_T prAdapter, UINT_8 *pucEvtBuf)
 			prTxDone->ucStatus == 0) {
 		/* Finish GC connection process. */
 		p2pFsmStateTransition(prAdapter, prP2pFsmInfo, P2P_STATE_IDLE);
+	}
+}
+
+VOID p2pFsmNotifyRxP2pActionFrame(IN P_ADAPTER_T prAdapter,
+		IN enum P2P_ACTION_FRAME_TYPE eP2pFrameType)
+{
+	P_P2P_FSM_INFO_T prP2pFsmInfo = (P_P2P_FSM_INFO_T) NULL;
+
+	prP2pFsmInfo = prAdapter->rWifiVar.prP2pFsmInfo;
+	if (prP2pFsmInfo->eCurrentState != P2P_STATE_CHNL_ON_HAND)
+		return;
+	if (prP2pFsmInfo->eCNNState != P2P_CNN_NORMAL)
+		return;
+
+	switch (eP2pFrameType) {
+	case P2P_GO_NEG_REQ:
+	case P2P_GO_NEG_RESP:
+	case P2P_INVITATION_REQ:
+	case P2P_DEV_DISC_REQ:
+	case P2P_PROV_DISC_REQ:
+		DBGLOG(P2P, INFO, "Extend channel duration, p2pFrameType: %d.\n", eP2pFrameType);
+		prP2pFsmInfo->eCNNState = eP2pFrameType + 1;
+		break;
+	default:
+		break;
 	}
 }
 

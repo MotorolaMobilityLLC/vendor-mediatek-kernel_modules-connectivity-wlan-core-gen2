@@ -456,10 +456,7 @@ VOID p2pFuncAcquireCh(IN P_ADAPTER_T prAdapter, IN P_P2P_CHNL_REQ_INFO_T prChnlR
 		prMsgChReq->ucNetTypeIndex = NETWORK_TYPE_P2P_INDEX;
 		prMsgChReq->ucTokenID = ++prChnlReqInfo->ucSeqNumOfChReq;
 		prMsgChReq->eReqType = CH_REQ_TYPE_JOIN;
-		if (prChnlReqInfo->u4MaxInterval < P2P_EXT_LISTEN_TIME_MS)
-			prMsgChReq->u4MaxInterval = P2P_EXT_LISTEN_TIME_MS;
-		else
-			prMsgChReq->u4MaxInterval = prChnlReqInfo->u4MaxInterval;
+		prMsgChReq->u4MaxInterval = prChnlReqInfo->u4MaxInterval;
 
 		prMsgChReq->ucPrimaryChannel = prChnlReqInfo->ucReqChnlNum;
 		prMsgChReq->eRfSco = prChnlReqInfo->eChnlSco;
@@ -976,20 +973,7 @@ p2pFuncDisconnect(IN P_ADAPTER_T prAdapter,
 #define WLAN_PA_GAS_COMEBACK_RESP 13
 #define WLAN_TDLS_DISCOVERY_RESPONSE 14
 
-/* P2P public action frames */
-enum p2p_action_frame_type {
-	P2P_GO_NEG_REQ = 0,
-	P2P_GO_NEG_RESP = 1,
-	P2P_GO_NEG_CONF = 2,
-	P2P_INVITATION_REQ = 3,
-	P2P_INVITATION_RESP = 4,
-	P2P_DEV_DISC_REQ = 5,
-	P2P_DEV_DISC_RESP = 6,
-	P2P_PROV_DISC_REQ = 7,
-	P2P_PROV_DISC_RESP = 8
-};
-
-const char *p2p_to_string(enum p2p_action_frame_type p2p_action)
+const char *p2p_to_string(enum P2P_ACTION_FRAME_TYPE p2p_action)
 {
 	switch (p2p_action) {
 	case P2P_GO_NEG_REQ:
@@ -2023,6 +2007,52 @@ p2pFunAbortOngoingScan(IN P_ADAPTER_T prAdapter)
 	}
 }
 
+static void p2pProcessActionResponse(IN P_ADAPTER_T prAdapter,
+		IN enum P2P_ACTION_FRAME_TYPE eType)
+{
+	P_P2P_FSM_INFO_T prP2pFsmInfo = (P_P2P_FSM_INFO_T) NULL;
+	BOOLEAN fgIdle = FALSE;
+
+	if (!prAdapter)
+		return;
+
+	prP2pFsmInfo = prAdapter->rWifiVar.prP2pFsmInfo;
+
+	if (!prP2pFsmInfo)
+		return;
+
+	switch (prP2pFsmInfo->eCNNState) {
+	case P2P_CNN_GO_NEG_REQ:
+		if (eType == P2P_GO_NEG_RESP)
+			fgIdle = TRUE;
+		break;
+	case P2P_CNN_GO_NEG_RESP:
+		if (eType == P2P_GO_NEG_CONF || eType == P2P_GO_NEG_REQ)
+			fgIdle = TRUE;
+		break;
+	case P2P_CNN_INVITATION_REQ:
+		if (eType == P2P_INVITATION_RESP)
+			fgIdle = TRUE;
+		break;
+	case P2P_CNN_DEV_DISC_REQ:
+		if (eType == P2P_DEV_DISC_RESP)
+			fgIdle = TRUE;
+		break;
+	case P2P_CNN_PROV_DISC_REQ:
+		if (eType == P2P_PROV_DISC_RESP)
+			fgIdle = TRUE;
+		break;
+	default:
+		break;
+	}
+
+	DBGLOG(P2P, INFO, "eConnState: %d, eType: %d\n",
+		prP2pFsmInfo->eCNNState, eType);
+
+	if (fgIdle)
+		prP2pFsmInfo->eCNNState = P2P_CNN_NORMAL;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
 * @brief This function will validate the Rx Probe Request Frame and then return
@@ -2055,11 +2085,14 @@ VOID p2pFuncValidateRxActionFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRf
 
 		switch (prActFrame->ucCategory) {
 		case CATEGORY_PUBLIC_ACTION:
-			if (prActFrame->ucAction == 0x9 && (*(pucVendor + 4)) == P2P_GO_NEG_REQ) {
+			if (prActFrame->ucAction != 0x9)
+				break;
+			if ((*(pucVendor + 4)) == P2P_GO_NEG_REQ) {
 				/* Abort scan while receiving P2P_GO_NEG_REQ */
-				DBGLOG(P2P, INFO, "p2pFuncValidateRxActionFrame: P2P_GO_NEG_REQ");
 				p2pFunAbortOngoingScan(prAdapter);
 			}
+			p2pProcessActionResponse(prAdapter, *(pucVendor + 4));
+			p2pFsmNotifyRxP2pActionFrame(prAdapter, *(pucVendor + 4));
 			break;
 		default:
 			break;

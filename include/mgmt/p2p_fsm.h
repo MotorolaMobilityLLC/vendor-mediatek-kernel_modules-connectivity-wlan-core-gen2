@@ -316,6 +316,7 @@ struct _P2P_FSM_INFO_T {
 
 	/* GO start and scan its channel first. */
 	BOOLEAN fgIsFirstGOScan;
+	BOOLEAN fgIsChannelExtended;
 };
 
 /*---------------- Messages -------------------*/
@@ -1811,5 +1812,8 @@ static inline VOID p2pDataTypeCheck(VOID)
 #endif /* _lint */
 
 VOID p2pFsmNotifyTxStatus(IN P_ADAPTER_T prAdapter, UINT_8 *pucEvtBuf);
+
+VOID p2pFsmNotifyRxP2pActionFrame(IN P_ADAPTER_T prAdapter,
+		IN enum P2P_ACTION_FRAME_TYPE eP2pFrameType);
 
 #endif /* _P2P_FSM_H */

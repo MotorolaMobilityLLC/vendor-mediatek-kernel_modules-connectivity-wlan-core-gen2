@@ -59,6 +59,8 @@
 
 #define P2P_AP_CHNL_HOLD_TIME_MS 5000
 
+#define P2P_CHNL_EXTEND_CHAN_TIME 500
+
 /*******************************************************************************
 *                                 M A C R O S
 ********************************************************************************
@@ -118,6 +120,19 @@ typedef struct _P2P_DISCONNECT_INFO {
 	UINT_8 ucRole;
 	UINT_8 ucRsv[3];
 } P2P_DISCONNECT_INFO, *P_P2P_DISCONNECT_INFO;
+
+/* P2P public action frames */
+enum P2P_ACTION_FRAME_TYPE {
+	P2P_GO_NEG_REQ = 0,
+	P2P_GO_NEG_RESP = 1,
+	P2P_GO_NEG_CONF = 2,
+	P2P_INVITATION_REQ = 3,
+	P2P_INVITATION_RESP = 4,
+	P2P_DEV_DISC_REQ = 5,
+	P2P_DEV_DISC_RESP = 6,
+	P2P_PROV_DISC_REQ = 7,
+	P2P_PROV_DISC_RESP = 8
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
