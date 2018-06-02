@@ -1809,4 +1809,6 @@ static inline VOID p2pDataTypeCheck(VOID)
 }
 #endif /* _lint */
 
+VOID p2pFsmNotifyTxStatus(IN P_ADAPTER_T prAdapter, UINT_8 *pucEvtBuf);
+
 #endif /* _P2P_FSM_H */
