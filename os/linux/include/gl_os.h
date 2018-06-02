@@ -216,6 +216,13 @@ extern BOOLEAN fgIsBusAccessFailed;
 extern const struct ieee80211_iface_combination *p_mtk_sta_iface_combos;
 extern const INT_32 mtk_sta_iface_combos_num;
 
+#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+typedef void (*wifi_fwlog_event_func_cb)(int, int);
+/* adaptor ko */
+extern int  wifi_fwlog_onoff_status(void);
+extern void wifi_fwlog_event_func_register(wifi_fwlog_event_func_cb pfFwlog);
+#endif
+
 /*******************************************************************************
 *                              C O N S T A N T S
 ********************************************************************************
