@@ -5016,7 +5016,7 @@ VOID qmHandleRxArpPackets(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb)
 	prBssInfo = &(prAdapter->rWifiVar.arBssInfo[NETWORK_TYPE_AIS_INDEX]);
 	if (arpOpCode == ARP_PRO_RSP) {
 		arpMoniter = 0;
-		if (prBssInfo && prBssInfo->prStaRecOfAP && prBssInfo->prStaRecOfAP->aucMacAddr) {
+		if (prBssInfo && prBssInfo->prStaRecOfAP) {
 			if (EQUAL_MAC_ADDR(&(pucData[ETH_TYPE_LEN_OFFSET + 10]), /* source hardware address */
 					prBssInfo->prStaRecOfAP->aucMacAddr)) {
 				kalMemCopy(apIp, &(pucData[ETH_TYPE_LEN_OFFSET + 16]), sizeof(apIp));
