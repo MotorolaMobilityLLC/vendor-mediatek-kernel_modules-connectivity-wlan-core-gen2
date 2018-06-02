@@ -404,6 +404,7 @@ typedef struct _MSG_P2P_MGMT_FRAME_UPDATE_T {
 typedef struct _MSG_P2P_SWITCH_OP_MODE_T {
 	MSG_HDR_T rMsgHdr;	/* Must be the first member */
 	ENUM_OP_MODE_T eOpMode;
+	enum ENUM_IFTYPE eIftype;
 } MSG_P2P_SWITCH_OP_MODE_T, *P_MSG_P2P_SWITCH_OP_MODE_T;
 
 typedef struct _MSG_P2P_MGMT_FRAME_REGISTER_T {
@@ -1808,7 +1809,5 @@ static inline VOID p2pDataTypeCheck(VOID)
 
 }
 #endif /* _lint */
-
-VOID p2pFsmNotifyTxStatus(IN P_ADAPTER_T prAdapter, UINT_8 *pucEvtBuf);
 
 #endif /* _P2P_FSM_H */

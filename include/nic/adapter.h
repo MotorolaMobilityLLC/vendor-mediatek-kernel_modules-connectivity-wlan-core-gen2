@@ -399,6 +399,7 @@ struct _BSS_INFO_T {
 #endif
 
 	BOOLEAN fgIsDelayIndication;
+	enum ENUM_IFTYPE eIftype;
 };
 
 struct ESS_CHNL_INFO {
