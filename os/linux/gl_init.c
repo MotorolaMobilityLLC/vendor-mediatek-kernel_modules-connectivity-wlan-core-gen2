@@ -41,8 +41,7 @@
 /* #define MAX_IOREQ_NUM   10 */
 
 BOOLEAN fgIsUnderSuspend;
-BOOLEAN fgNvramAvailable;
-UINT_8 g_aucNvram[CFG_FILE_WIFI_REC_SIZE];
+
 
 #if CFG_ENABLE_WIFI_DIRECT
 spinlock_t g_p2p_lock;
@@ -106,18 +105,30 @@ static struct ieee80211_channel mtk_2ghz_channels[] = {
 }
 
 static struct ieee80211_channel mtk_5ghz_channels[] = {
+	/* UNII-1 */
 	CHAN5G(34, 0), CHAN5G(36, 0),
 	CHAN5G(38, 0), CHAN5G(40, 0),
 	CHAN5G(42, 0), CHAN5G(44, 0),
 	CHAN5G(46, 0), CHAN5G(48, 0),
-	CHAN5G(52, 0), CHAN5G(56, 0),
-	CHAN5G(60, 0), CHAN5G(64, 0),
-	CHAN5G(100, 0), CHAN5G(104, 0),
-	CHAN5G(108, 0), CHAN5G(112, 0),
-	CHAN5G(116, 0), CHAN5G(120, 0),
-	CHAN5G(124, 0), CHAN5G(128, 0),
-	CHAN5G(132, 0), CHAN5G(136, 0),
-	CHAN5G(140, 0), CHAN5G(149, 0),
+	/* UNII-2 */
+	CHAN5G(52, IEEE80211_CHAN_RADAR),
+	CHAN5G(56, IEEE80211_CHAN_RADAR),
+	CHAN5G(60, IEEE80211_CHAN_RADAR),
+	CHAN5G(64, IEEE80211_CHAN_RADAR),
+	/* UNII-2e */
+	CHAN5G(100, IEEE80211_CHAN_RADAR),
+	CHAN5G(104, IEEE80211_CHAN_RADAR),
+	CHAN5G(108, IEEE80211_CHAN_RADAR),
+	CHAN5G(112, IEEE80211_CHAN_RADAR),
+	CHAN5G(116, IEEE80211_CHAN_RADAR),
+	CHAN5G(120, IEEE80211_CHAN_RADAR),
+	CHAN5G(124, IEEE80211_CHAN_RADAR),
+	CHAN5G(128, IEEE80211_CHAN_RADAR),
+	CHAN5G(132, IEEE80211_CHAN_RADAR),
+	CHAN5G(136, IEEE80211_CHAN_RADAR),
+	CHAN5G(140, IEEE80211_CHAN_RADAR),
+	/* UNII-3 */
+	CHAN5G(149, 0),
 	CHAN5G(153, 0), CHAN5G(157, 0),
 	CHAN5G(161, 0), CHAN5G(165, 0),
 	CHAN5G(169, 0), CHAN5G(173, 0),
@@ -628,156 +639,157 @@ static void glLoadNvram(IN P_GLUE_INFO_T prGlueInfo, OUT P_REG_INFO_T prRegInfo)
 	if ((!prGlueInfo) || (!prRegInfo))
 		return;
 
-	DBGLOG(INIT, INFO, "fgNvramAvailable = %u\n", fgNvramAvailable);
-	prGlueInfo->fgNvramAvailable = fgNvramAvailable;
-	if (!prGlueInfo->fgNvramAvailable) {
-		DBGLOG(INIT, WARN, "Nvram not available\n");
-		return;
-	}
+	if (kalCfgDataRead16(prGlueInfo, 0, (PUINT_16) aucTmp) == TRUE) {
+		prGlueInfo->fgNvramAvailable = TRUE;
 
-	/* load MAC Address */
+		/* load MAC Address */
 #if CFG_TC1_FEATURE
 	TC1_FAC_NAME(FacReadWifiMacAddr) ((unsigned char *)prRegInfo->aucMacAddr);
 
 #elif CFG_TC10_FEATURE
 		/* MAC Address is loaded before glLoadNvram */
 #else
-	for (i = 0; i < PARAM_MAC_ADDR_LEN; i += sizeof(UINT_16)) {
-		kalCfgDataRead16(prGlueInfo,
-				 OFFSET_OF(WIFI_CFG_PARAM_STRUCT, aucMacAddress) + i,
+		for (i = 0; i < PARAM_MAC_ADDR_LEN; i += sizeof(UINT_16)) {
+			kalCfgDataRead16(prGlueInfo,
+					 OFFSET_OF(WIFI_CFG_PARAM_STRUCT, aucMacAddress) + i,
 					 (PUINT_16) (((PUINT_8) prRegInfo->aucMacAddr) + i));
-	}
+		}
 #endif
 
-	/* load country code */
-	kalCfgDataRead16(prGlueInfo, OFFSET_OF(WIFI_CFG_PARAM_STRUCT, aucCountryCode[0]), (PUINT_16) aucTmp);
+		/* load country code */
+		kalCfgDataRead16(prGlueInfo, OFFSET_OF(WIFI_CFG_PARAM_STRUCT, aucCountryCode[0]), (PUINT_16) aucTmp);
 
-	/* cast to wide characters */
-	prRegInfo->au2CountryCode[0] = (UINT_16) aucTmp[0];
-	prRegInfo->au2CountryCode[1] = (UINT_16) aucTmp[1];
+		/* cast to wide characters */
+		prRegInfo->au2CountryCode[0] = (UINT_16) aucTmp[0];
+		prRegInfo->au2CountryCode[1] = (UINT_16) aucTmp[1];
 
-	/* load default normal TX power */
-	for (i = 0; i < sizeof(TX_PWR_PARAM_T); i += sizeof(UINT_16)) {
-		kalCfgDataRead16(prGlueInfo,
-				 OFFSET_OF(WIFI_CFG_PARAM_STRUCT, rTxPwr) + i,
-				 (PUINT_16) (((PUINT_8)&(prRegInfo->rTxPwr)) + i));
-	}
-
-	/* load feature flags */
-	kalCfgDataRead16(prGlueInfo, OFFSET_OF(WIFI_CFG_PARAM_STRUCT, ucTxPwrValid), (PUINT_16) aucTmp);
-	prRegInfo->ucTxPwrValid = aucTmp[0];
-	prRegInfo->ucSupport5GBand = aucTmp[1];
-
-	kalCfgDataRead16(prGlueInfo, OFFSET_OF(WIFI_CFG_PARAM_STRUCT, uc2G4BwFixed20M), (PUINT_16) aucTmp);
-	prRegInfo->uc2G4BwFixed20M = aucTmp[0];
-	prRegInfo->uc5GBwFixed20M = aucTmp[1];
-
-	kalCfgDataRead16(prGlueInfo, OFFSET_OF(WIFI_CFG_PARAM_STRUCT, ucEnable5GBand), (PUINT_16) aucTmp);
-	prRegInfo->ucEnable5GBand = aucTmp[0];
-
-	/* load EFUSE overriding part */
-	for (i = 0; i < sizeof(prRegInfo->aucEFUSE); i += sizeof(UINT_16)) {
-		kalCfgDataRead16(prGlueInfo,
-				 OFFSET_OF(WIFI_CFG_PARAM_STRUCT, aucEFUSE) + i,
-				 (PUINT_16) (((PUINT_8)&(prRegInfo->aucEFUSE)) + i));
-	}
-
-	/* load band edge tx power control */
-	kalCfgDataRead16(prGlueInfo, OFFSET_OF(WIFI_CFG_PARAM_STRUCT, fg2G4BandEdgePwrUsed), (PUINT_16) aucTmp);
-		prRegInfo->fg2G4BandEdgePwrUsed = (BOOLEAN) aucTmp[0];
-	if (aucTmp[0]) {
-		prRegInfo->cBandEdgeMaxPwrCCK = (INT_8) aucTmp[1];
+		/* load default normal TX power */
+		for (i = 0; i < sizeof(TX_PWR_PARAM_T); i += sizeof(UINT_16)) {
 			kalCfgDataRead16(prGlueInfo,
-				 OFFSET_OF(WIFI_CFG_PARAM_STRUCT, cBandEdgeMaxPwrOFDM20), (PUINT_16) aucTmp);
-		prRegInfo->cBandEdgeMaxPwrOFDM20 = (INT_8) aucTmp[0];
-		prRegInfo->cBandEdgeMaxPwrOFDM40 = (INT_8) aucTmp[1];
-	}
+					 OFFSET_OF(WIFI_CFG_PARAM_STRUCT, rTxPwr) + i,
+					 (PUINT_16) (((PUINT_8) &(prRegInfo->rTxPwr)) + i));
+		}
 
-	/* load regulation subbands */
-	kalCfgDataRead16(prGlueInfo, OFFSET_OF(WIFI_CFG_PARAM_STRUCT, ucRegChannelListMap), (PUINT_16) aucTmp);
-	prRegInfo->eRegChannelListMap = (ENUM_REG_CH_MAP_T) aucTmp[0];
-	prRegInfo->ucRegChannelListIndex = aucTmp[1];
+		/* load feature flags */
+		kalCfgDataRead16(prGlueInfo, OFFSET_OF(WIFI_CFG_PARAM_STRUCT, ucTxPwrValid), (PUINT_16) aucTmp);
+		prRegInfo->ucTxPwrValid = aucTmp[0];
+		prRegInfo->ucSupport5GBand = aucTmp[1];
 
-	if (prRegInfo->eRegChannelListMap == REG_CH_MAP_CUSTOMIZED) {
-		for (i = 0; i < MAX_SUBBAND_NUM; i++) {
-			pucDest = (PUINT_8)&prRegInfo->rDomainInfo.rSubBand[i];
-			for (j = 0; j < 6; j += sizeof(UINT_16)) {
-				kalCfgDataRead16(prGlueInfo, OFFSET_OF(WIFI_CFG_PARAM_STRUCT, aucRegSubbandInfo)
-						 + (i * 6 + j), (PUINT_16) aucTmp);
+		kalCfgDataRead16(prGlueInfo, OFFSET_OF(WIFI_CFG_PARAM_STRUCT, uc2G4BwFixed20M), (PUINT_16) aucTmp);
+		prRegInfo->uc2G4BwFixed20M = aucTmp[0];
+		prRegInfo->uc5GBwFixed20M = aucTmp[1];
 
-				*pucDest++ = aucTmp[0];
-				*pucDest++ = aucTmp[1];
+		kalCfgDataRead16(prGlueInfo, OFFSET_OF(WIFI_CFG_PARAM_STRUCT, ucEnable5GBand), (PUINT_16) aucTmp);
+		prRegInfo->ucEnable5GBand = aucTmp[0];
+
+		/* load EFUSE overriding part */
+		for (i = 0; i < sizeof(prRegInfo->aucEFUSE); i += sizeof(UINT_16)) {
+			kalCfgDataRead16(prGlueInfo,
+					 OFFSET_OF(WIFI_CFG_PARAM_STRUCT, aucEFUSE) + i,
+					 (PUINT_16) (((PUINT_8) &(prRegInfo->aucEFUSE)) + i));
+		}
+
+		/* load band edge tx power control */
+		kalCfgDataRead16(prGlueInfo, OFFSET_OF(WIFI_CFG_PARAM_STRUCT, fg2G4BandEdgePwrUsed), (PUINT_16) aucTmp);
+		prRegInfo->fg2G4BandEdgePwrUsed = (BOOLEAN) aucTmp[0];
+		if (aucTmp[0]) {
+			prRegInfo->cBandEdgeMaxPwrCCK = (INT_8) aucTmp[1];
+
+			kalCfgDataRead16(prGlueInfo,
+					 OFFSET_OF(WIFI_CFG_PARAM_STRUCT, cBandEdgeMaxPwrOFDM20), (PUINT_16) aucTmp);
+			prRegInfo->cBandEdgeMaxPwrOFDM20 = (INT_8) aucTmp[0];
+			prRegInfo->cBandEdgeMaxPwrOFDM40 = (INT_8) aucTmp[1];
+		}
+
+		/* load regulation subbands */
+		kalCfgDataRead16(prGlueInfo, OFFSET_OF(WIFI_CFG_PARAM_STRUCT, ucRegChannelListMap), (PUINT_16) aucTmp);
+		prRegInfo->eRegChannelListMap = (ENUM_REG_CH_MAP_T) aucTmp[0];
+		prRegInfo->ucRegChannelListIndex = aucTmp[1];
+
+		if (prRegInfo->eRegChannelListMap == REG_CH_MAP_CUSTOMIZED) {
+			for (i = 0; i < MAX_SUBBAND_NUM; i++) {
+				pucDest = (PUINT_8) &prRegInfo->rDomainInfo.rSubBand[i];
+				for (j = 0; j < 6; j += sizeof(UINT_16)) {
+					kalCfgDataRead16(prGlueInfo, OFFSET_OF(WIFI_CFG_PARAM_STRUCT, aucRegSubbandInfo)
+							 + (i * 6 + j), (PUINT_16) aucTmp);
+
+					*pucDest++ = aucTmp[0];
+					*pucDest++ = aucTmp[1];
+				}
 			}
 		}
-	}
-	/* load RSSI compensation */
-	kalCfgDataRead16(prGlueInfo, OFFSET_OF(WIFI_CFG_PARAM_STRUCT, uc2GRssiCompensation), (PUINT_16) aucTmp);
-	prRegInfo->uc2GRssiCompensation = aucTmp[0];
-	prRegInfo->uc5GRssiCompensation = aucTmp[1];
+		/* load RSSI compensation */
+		kalCfgDataRead16(prGlueInfo, OFFSET_OF(WIFI_CFG_PARAM_STRUCT, uc2GRssiCompensation), (PUINT_16) aucTmp);
+		prRegInfo->uc2GRssiCompensation = aucTmp[0];
+		prRegInfo->uc5GRssiCompensation = aucTmp[1];
 
-	kalCfgDataRead16(prGlueInfo,
-			 OFFSET_OF(WIFI_CFG_PARAM_STRUCT, fgRssiCompensationValidbit), (PUINT_16) aucTmp);
-	prRegInfo->fgRssiCompensationValidbit = aucTmp[0];
-	prRegInfo->ucRxAntennanumber = aucTmp[1];
+		kalCfgDataRead16(prGlueInfo,
+				 OFFSET_OF(WIFI_CFG_PARAM_STRUCT, fgRssiCompensationValidbit), (PUINT_16) aucTmp);
+		prRegInfo->fgRssiCompensationValidbit = aucTmp[0];
+		prRegInfo->ucRxAntennanumber = aucTmp[1];
 
 #if CFG_SUPPORT_TX_POWER_BACK_OFF
-	kalCfgDataRead(prGlueInfo,
-		OFFSET_OF(WIFI_CFG_PARAM_STRUCT, fgRlmMitigatedPwrByChByMode),
-		sizeof(UINT_8),
-		(PUINT_16) aucTmp);
-		prRegInfo->fgRlmMitigatedPwrByChByMode = aucTmp[0];
+		kalCfgDataRead(prGlueInfo,
+			OFFSET_OF(WIFI_CFG_PARAM_STRUCT, fgRlmMitigatedPwrByChByMode),
+			sizeof(UINT_8),
+			(PUINT_16) aucTmp);
+			prRegInfo->fgRlmMitigatedPwrByChByMode = aucTmp[0];
 
-	/* load Tx Power offset perchannel per mode 40 : MAXNUM_MITIGATED_PWR_BY_CH_BY_MODE */
-	kalCfgDataRead(prGlueInfo,
-		OFFSET_OF(WIFI_CFG_PARAM_STRUCT, arRlmMitigatedPwrByChByMode),
-		sizeof(MITIGATED_PWR_BY_CH_BY_MODE)*40,
-		(PUINT_16) prRegInfo->arRlmMitigatedPwrByChByMode);
+		/* load Tx Power offset perchannel per mode 40 : MAXNUM_MITIGATED_PWR_BY_CH_BY_MODE */
+		kalCfgDataRead(prGlueInfo,
+			OFFSET_OF(WIFI_CFG_PARAM_STRUCT, arRlmMitigatedPwrByChByMode),
+			sizeof(MITIGATED_PWR_BY_CH_BY_MODE)*40,
+			(PUINT_16) prRegInfo->arRlmMitigatedPwrByChByMode);
 
-	kalCfgDataRead16(prGlueInfo, OFFSET_OF(WIFI_CFG_PARAM_STRUCT,
-		bTxPowerLimitEnable2G), (PUINT_16) aucTmp);
-	prRegInfo->bTxPowerLimitEnable2G = (BOOLEAN)aucTmp[0];
-	prRegInfo->cTxBackOffMaxPower2G = aucTmp[1];
+		kalCfgDataRead16(prGlueInfo, OFFSET_OF(WIFI_CFG_PARAM_STRUCT,
+			bTxPowerLimitEnable2G), (PUINT_16) aucTmp);
+		prRegInfo->bTxPowerLimitEnable2G = (BOOLEAN)aucTmp[0];
+		prRegInfo->cTxBackOffMaxPower2G = aucTmp[1];
 
-	/* load TxPower for 5G Band from nvram */
-	kalCfgDataRead16(prGlueInfo, OFFSET_OF(WIFI_CFG_PARAM_STRUCT,
-		bTxPowerLimitEnable5G), (PUINT_16) aucTmp);
-	prRegInfo->bTxPowerLimitEnable5G = (BOOLEAN)aucTmp[0];
-	prRegInfo->cTxBackOffMaxPower5G = aucTmp[1];
+		/* load TxPower for 5G Band from nvram */
+		kalCfgDataRead16(prGlueInfo, OFFSET_OF(WIFI_CFG_PARAM_STRUCT,
+			bTxPowerLimitEnable5G), (PUINT_16) aucTmp);
+		prRegInfo->bTxPowerLimitEnable5G = (BOOLEAN)aucTmp[0];
+		prRegInfo->cTxBackOffMaxPower5G = aucTmp[1];
 
 
 #endif
 #if CFG_SUPPORT_FCC_POWER_BACK_OFF
-	/* load FCC cert. parameters */
-	kalCfgDataRead(prGlueInfo,
+		/* load FCC cert. parameters */
+		kalCfgDataRead(prGlueInfo,
+			       OFFSET_OF(WIFI_CFG_PARAM_STRUCT, rFccTxPwrAdjust),
+			       sizeof(FCC_TX_PWR_ADJUST),
+			       (PUINT_16)&prRegInfo->rFccTxPwrAdjust);
+
+		/* load FCC Channel Band Edge */
+		kalCfgDataRead16(prGlueInfo,
+			OFFSET_OF(WIFI_CFG_PARAM_STRUCT, aucChannelBandEdge[0]), (PUINT_16) aucTmp);
+		prRegInfo->aucChannelBandEdge[0] = (UINT_8) aucTmp[0];
+		prRegInfo->aucChannelBandEdge[1] = (UINT_8) aucTmp[1];
+
+		DBGLOG(INIT, TRACE, "rFccTxPwrAdjust offset:%ld, value:%d, %d, %d, %d, [%d, %d], [%d, %d], [%d, %d]\n",
 		       OFFSET_OF(WIFI_CFG_PARAM_STRUCT, rFccTxPwrAdjust),
-		       sizeof(FCC_TX_PWR_ADJUST),
-		       (PUINT_16)&prRegInfo->rFccTxPwrAdjust);
+		       prRegInfo->rFccTxPwrAdjust.fgFccTxPwrAdjust,
+		       prRegInfo->rFccTxPwrAdjust.uOffsetCCK,
+		       prRegInfo->rFccTxPwrAdjust.uOffsetHT20,
+		       prRegInfo->rFccTxPwrAdjust.uOffsetHT40,
+		       prRegInfo->rFccTxPwrAdjust.aucChannelCCK[0],
+		       prRegInfo->rFccTxPwrAdjust.aucChannelCCK[1],
+		       prRegInfo->rFccTxPwrAdjust.aucChannelHT20[0],
+		       prRegInfo->rFccTxPwrAdjust.aucChannelHT20[1],
+		       prRegInfo->rFccTxPwrAdjust.aucChannelHT40[0],
+		       prRegInfo->rFccTxPwrAdjust.aucChannelHT40[1]);
 
-	/* load FCC Channel Band Edge */
-	kalCfgDataRead16(prGlueInfo,
-		OFFSET_OF(WIFI_CFG_PARAM_STRUCT, aucChannelBandEdge[0]), (PUINT_16) aucTmp);
-	prRegInfo->aucChannelBandEdge[0] = (UINT_8) aucTmp[0];
-	prRegInfo->aucChannelBandEdge[1] = (UINT_8) aucTmp[1];
-
-	DBGLOG(INIT, TRACE, "rFccTxPwrAdjust offset:%ld, value:%d, %d, %d, %d, [%d, %d], [%d, %d], [%d, %d]\n",
-	       OFFSET_OF(WIFI_CFG_PARAM_STRUCT, rFccTxPwrAdjust),
-	       prRegInfo->rFccTxPwrAdjust.fgFccTxPwrAdjust,
-	       prRegInfo->rFccTxPwrAdjust.uOffsetCCK,
-	       prRegInfo->rFccTxPwrAdjust.uOffsetHT20,
-	       prRegInfo->rFccTxPwrAdjust.uOffsetHT40,
-	       prRegInfo->rFccTxPwrAdjust.aucChannelCCK[0],
-	       prRegInfo->rFccTxPwrAdjust.aucChannelCCK[1],
-	       prRegInfo->rFccTxPwrAdjust.aucChannelHT20[0],
-	       prRegInfo->rFccTxPwrAdjust.aucChannelHT20[1],
-	       prRegInfo->rFccTxPwrAdjust.aucChannelHT40[0],
-	       prRegInfo->rFccTxPwrAdjust.aucChannelHT40[1]);
-
-	DBGLOG(INIT, TRACE, "FCC Tx power channel band edge [%d, %d]\n",
-		prRegInfo->aucChannelBandEdge[0], prRegInfo->aucChannelBandEdge[1]);
+		DBGLOG(INIT, TRACE, "FCC Tx power channel band edge [%d, %d]\n",
+			prRegInfo->aucChannelBandEdge[0], prRegInfo->aucChannelBandEdge[1]);
 #endif
-	startAddr = OFFSET_OF(REG_INFO_T, aucMacAddr);
-	len = sizeof(REG_INFO_T);
-	DBGLOG_MEM8_IE_ONE_LINE(INIT, INFO, "RegInfo", (PUINT_8)prRegInfo + startAddr, len);
+		startAddr = OFFSET_OF(REG_INFO_T, aucMacAddr);
+		len = sizeof(REG_INFO_T);
+		DBGLOG_MEM8_IE_ONE_LINE(INIT, INFO, "RegInfo", (PUINT_8)prRegInfo + startAddr, len);
+	} else {
+		prGlueInfo->fgNvramAvailable = FALSE;
+	}
+
 }
 
 #if CFG_ENABLE_WIFI_DIRECT
@@ -1093,22 +1105,6 @@ static BOOLEAN fgIsWorkMcStart = FALSE;
 static BOOLEAN fgIsWorkMcEverInit = FALSE;
 static struct wireless_dev *gprWdev;
 
-static UINT_8 wlanNvramBufHandler(PVOID ctx, const CHAR *buf, UINT_16 length)
-{
-	DBGLOG(INIT, INFO, "buf = %p, length = %u\n", buf, length);
-	if (buf == NULL || length <= 0 || length != sizeof(g_aucNvram))
-		return;
-
-	if (copy_from_user(g_aucNvram, buf, length)) {
-		DBGLOG(INIT, ERROR, "copy nvram fail\n");
-		fgNvramAvailable = FALSE;
-		return -EINVAL;
-	}
-
-	fgNvramAvailable = TRUE;
-	return 0;
-}
-
 static void createWirelessDevice(void)
 {
 	struct wiphy *prWiphy = NULL;
@@ -1228,7 +1224,6 @@ static void createWirelessDevice(void)
 	}
 #endif /* CFG_SUPPORT_PERSIST_NETDEV */
 
-	register_file_buf_handler(wlanNvramBufHandler, (PVOID)NULL, ENUM_BUF_TYPE_NVRAM);
 	gprWdev = prWdev;
 	DBGLOG(INIT, INFO, "Create wireless device success\n");
 	return;
@@ -1775,6 +1770,10 @@ VOID wlanUpdateChannelTable(P_GLUE_INFO_T prGlueInfo)
 				if (mtk_5ghz_channels[j].hw_value == aucChannelList[i].ucChannelNum) {
 					mtk_5ghz_channels[j].flags &= ~IEEE80211_CHAN_DISABLED;
 					mtk_5ghz_channels[j].orig_flags &= ~IEEE80211_CHAN_DISABLED;
+					mtk_5ghz_channels[j].dfs_state =
+					    (aucChannelList[i].eDFS) ?
+					     NL80211_DFS_USABLE :
+					     NL80211_DFS_UNAVAILABLE;
 					break;
 				}
 			}
@@ -3514,7 +3513,6 @@ static int initWlan(void)
 
 	spin_lock_init(&g_p2p_lock);
 
-	fgNvramAvailable = FALSE;
 	/* memory pre-allocation */
 	kalInitIOBuffer();
 	procInitFs();

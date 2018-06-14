@@ -436,6 +436,7 @@ typedef enum _ENUM_BAND_T {
 typedef struct _RF_CHANNEL_INFO_T {
 	ENUM_BAND_T eBand;
 	UINT_8 ucChannelNum;
+	enum nl80211_dfs_state eDFS;
 } RF_CHANNEL_INFO_T, *P_RF_CHANNEL_INFO_T;
 
 typedef enum _ENUM_RATE_INDEX_T {
