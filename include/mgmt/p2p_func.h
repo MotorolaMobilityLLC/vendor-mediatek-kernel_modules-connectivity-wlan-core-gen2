@@ -176,3 +176,7 @@ BOOLEAN p2pFuncRetryGcDeauth(IN P_ADAPTER_T prAdapter, IN P_P2P_FSM_INFO_T prP2p
 VOID p2pFuncClearGcDeauthRetry(IN P_ADAPTER_T prAdapter);
 
 VOID p2pFuncDeauthComplete(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prP2pBssInfo);
+
+void p2pFunCleanQueuedMgmtFrame(IN P_ADAPTER_T prAdapter,
+		IN struct P2P_QUEUED_ACTION_FRAME *prFrame);
+
