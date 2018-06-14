@@ -3395,10 +3395,12 @@ wlanoidQueryVendorId(IN P_ADAPTER_T prAdapter,
 }				/* wlanoidQueryVendorId */
 
 WLAN_STATUS
-wlanoidRssiMonitor(IN P_ADAPTER_T prAdapter,
-		 OUT PVOID pvQueryBuffer, IN UINT_32 u4QueryBufferLen, OUT PUINT_32 pu4QueryInfoLen)
+wlanoidRssiMonitor(IN P_ADAPTER_T prAdapter, OUT PVOID pvQueryBuffer,
+		   IN UINT_32 u4QueryBufferLen, OUT PUINT_32 pu4QueryInfoLen)
 {
 	PARAM_RSSI_MONITOR_T rRssi;
+	WLAN_STATUS rStatus1 = WLAN_STATUS_SUCCESS;
+	WLAN_STATUS rStatus2;
 
 	ASSERT(prAdapter);
 	ASSERT(pu4QueryInfoLen);
@@ -3413,8 +3415,11 @@ wlanoidRssiMonitor(IN P_ADAPTER_T prAdapter,
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 	}
 
-	kalMemZero(&rRssi, sizeof(PARAM_RSSI_MONITOR_T));
+	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) ==
+	    PARAM_MEDIA_STATE_DISCONNECTED)
+		rStatus1 = WLAN_STATUS_ADAPTER_NOT_READY;
 
+	kalMemZero(&rRssi, sizeof(PARAM_RSSI_MONITOR_T));
 	kalMemCopy(&rRssi, pvQueryBuffer, sizeof(PARAM_RSSI_MONITOR_T));
 	if (rRssi.enable) {
 		if (rRssi.max_rssi_value > PARAM_WHQL_RSSI_MAX_DBM)
@@ -3429,15 +3434,18 @@ wlanoidRssiMonitor(IN P_ADAPTER_T prAdapter,
 	DBGLOG(OID, INFO, "enable=%d, max_rssi_value=%d, min_rssi_value=%d\n",
 		rRssi.enable, rRssi.max_rssi_value, rRssi.min_rssi_value);
 
-	return wlanSendSetQueryCmd(prAdapter,
+	rStatus2 = wlanSendSetQueryCmd(prAdapter,
 			   CMD_ID_RSSI_MONITOR,
 			   TRUE,
 			   FALSE,
 			   TRUE,
 			   nicCmdEventSetCommon,
 			   nicOidCmdTimeoutCommon,
-			   sizeof(PARAM_RSSI_MONITOR_T), (PUINT_8)&rRssi, NULL, 0);
+			   sizeof(PARAM_RSSI_MONITOR_T),
+			   (PUINT_8)&rRssi, NULL, 0);
 
+	return (rStatus1 == WLAN_STATUS_ADAPTER_NOT_READY) ?
+		rStatus1 : rStatus2;
 }
 
 /*----------------------------------------------------------------------------*/
