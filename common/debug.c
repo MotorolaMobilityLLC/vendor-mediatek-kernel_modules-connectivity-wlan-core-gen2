@@ -1571,8 +1571,6 @@ VOID wlanDbgSetLogLevelImpl(IN P_ADAPTER_T prAdapter, UINT_32 u4Version,
 			u4FwLogLevel);
 		set_logtoomuch_enable(0);
 	}
-
-	return WLAN_STATUS_SUCCESS;
 }
 
 VOID wlanDbgLevelSync(VOID)
