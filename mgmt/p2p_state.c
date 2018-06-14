@@ -92,6 +92,13 @@ VOID p2pStateInit_CHNL_ON_HAND(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prP2pBs
 						prChnlReqInfo->u4MaxInterval);
 				/* Complete channel request */
 				complete(&prAdapter->prGlueInfo->rP2pReq);
+				if (prP2pFsmInfo->rQueuedActionFrame.u2Length > 0) {
+					kalP2pIndicateQueuedMgmtFrame(
+						prAdapter->prGlueInfo,
+						&prP2pFsmInfo->rQueuedActionFrame);
+					p2pFunCleanQueuedMgmtFrame(prAdapter,
+						&prP2pFsmInfo->rQueuedActionFrame);
+				}
 			}
 		} else
 			cnmTimerStartTimer(prAdapter, &(prAdapter->rP2pFsmTimeoutTimer),
@@ -139,6 +146,8 @@ p2pStateAbort_CHNL_ON_HAND(IN P_ADAPTER_T prAdapter,
 			p2pFuncReleaseCh(prAdapter, &(prP2pFsmInfo->rChnlReqInfo));
 			/* case: if supplicant cancel remain on channel */
 			complete(&prAdapter->prGlueInfo->rP2pReq);
+			p2pFunCleanQueuedMgmtFrame(prAdapter,
+					&prP2pFsmInfo->rQueuedActionFrame);
 		}
 
 	} while (FALSE);

@@ -134,6 +134,12 @@ enum P2P_ACTION_FRAME_TYPE {
 	P2P_PROV_DISC_RESP = 8
 };
 
+struct P2P_QUEUED_ACTION_FRAME {
+	int32_t u4Freq;
+	uint8_t *prHeader;
+	uint16_t u2Length;
+};
+
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
