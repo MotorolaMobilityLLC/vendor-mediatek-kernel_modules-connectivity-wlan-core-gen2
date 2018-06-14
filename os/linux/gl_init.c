@@ -318,6 +318,15 @@ static const struct wiphy_vendor_command mtk_wlan_vendor_ops[] = {
 	{
 		{
 			.vendor_id = GOOGLE_OUI,
+			.subcmd = WIFI_SUBCMD_SET_PNO_RANDOM_MAC_OUI
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV
+			| WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_set_scan_mac_oui
+	},
+	{
+		{
+			.vendor_id = GOOGLE_OUI,
 			.subcmd = WIFI_SUBCMD_GET_ROAMING_CAPABILITIES
 		},
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV | WIPHY_VENDOR_CMD_NEED_NETDEV,
