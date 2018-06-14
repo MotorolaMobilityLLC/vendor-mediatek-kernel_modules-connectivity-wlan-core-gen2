@@ -76,6 +76,7 @@
 
 #define CMD_ADD_TS          "addts"
 #define CMD_DELETE_TS		"delts"
+#define CMD_FW_PARAM            "set_fw_param "
 
 /* miracast related definition */
 #define MIRACAST_MODE_OFF	0
@@ -5004,13 +5005,16 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 			i4BytesWritten = priv_driver_disable_ncho(prNetDev, pcCommand, i4TotalLen);
 		}
 #endif
+		else if (!strncasecmp(pcCommand, CMD_FW_PARAM, strlen(CMD_FW_PARAM)))
+			kalIoctl(prGlueInfo, wlanoidSetFwParam, (PVOID)(pcCommand + 13),
+				 i4TotalLen - 13, FALSE, FALSE, FALSE, FALSE, &i4BytesWritten);
 		else
 			i4CmdFound = 0;
 	}
 
 	/* i4CmdFound */
 	if (i4CmdFound == 0)
-		DBGLOG(REQ, TRACE, "Unknown driver command %s - ignored\n", pcCommand);
+		DBGLOG(REQ, INFO, "Unknown driver command %s - ignored\n", pcCommand);
 
 	if (i4BytesWritten >= 0) {
 		if ((i4BytesWritten == 0) && (i4TotalLen > 0)) {
