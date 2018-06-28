@@ -1418,7 +1418,8 @@ WLAN_STATUS nicUpdateBss(IN P_ADAPTER_T prAdapter, IN ENUM_NETWORK_TYPE_INDEX_T 
 	rCmdSetBssInfo.ucPhyTypeSet = prBssInfo->ucPhyTypeSet;
 	rCmdSetBssInfo.fgHiddenSsidMode = prBssInfo->eHiddenSsidType;
 #if CFG_ENABLE_WIFI_DIRECT
-	if (prAdapter->fgIsP2PRegistered)
+	if (prAdapter->fgIsP2PRegistered
+		|| prBssInfo->eCurrentOPMode == OP_MODE_P2P_DEVICE)
 		COPY_MAC_ADDR(rCmdSetBssInfo.aucOwnMac, prBssInfo->aucOwnMacAddr);
 #endif
 
