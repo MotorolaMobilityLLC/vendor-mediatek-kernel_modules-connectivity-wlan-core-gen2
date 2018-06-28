@@ -2493,7 +2493,7 @@ int tx_thread(void *data)
 				KAL_RELEASE_SPIN_LOCK(prGlueInfo->prAdapter, SPIN_LOCK_RX_QUE);
 				if (prSwRfb) {
 					if (nicRxSetupRFB(prGlueInfo->prAdapter, prSwRfb)) {
-						DBGLOG(INIT, ERROR, "Setup RFB Fail! insert uninit List!\n");
+						DBGLOGLIMITED(INIT, ERROR, "Setup RFB Fail! insert uninit List!\n");
 						fgIsUninitRfb = TRUE;
 					}
 					nicRxReturnRFBwithUninit(prGlueInfo->prAdapter, prSwRfb, fgIsUninitRfb);
