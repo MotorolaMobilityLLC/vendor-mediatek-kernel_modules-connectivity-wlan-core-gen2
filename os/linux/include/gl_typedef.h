@@ -108,30 +108,6 @@ typedef union _ULARGE_INTEGER {
 typedef INT_32(*probe_card) (PVOID pvData);
 typedef VOID(*remove_card) (VOID);
 
-typedef enum _ENUM_WMTDRV_TYPE_T {
-	WMTDRV_TYPE_BT = 0,
-	WMTDRV_TYPE_FM = 1,
-	WMTDRV_TYPE_GPS = 2,
-	WMTDRV_TYPE_WIFI = 3,
-	WMTDRV_TYPE_WMT = 4,
-	WMTDRV_TYPE_STP = 5,
-	WMTDRV_TYPE_SDIO1 = 6,
-	WMTDRV_TYPE_SDIO2 = 7,
-	WMTDRV_TYPE_LPBK = 8,
-	WMTDRV_TYPE_MAX
-} ENUM_WMTDRV_TYPE_T, *P_ENUM_WMTDRV_TYPE_T;
-
-typedef enum _ENUM_WMTMSG_TYPE_T {
-	WMTMSG_TYPE_POWER_ON = 0,
-	WMTMSG_TYPE_POWER_OFF = 1,
-	WMTMSG_TYPE_RESET = 2,
-	WMTMSG_TYPE_STP_RDY = 3,
-	WMTMSG_TYPE_HW_FUNC_ON = 4,
-	WMTMSG_TYPE_MAX
-} ENUM_WMTMSG_TYPE_T, *P_ENUM_WMTMSG_TYPE_T;
-
-typedef INT32(*PF_WMT_SDIO_DEBUG)(INT32, INT32, UINT32, UINT32);
-typedef INT32(*PF_WMT_SDIO_DEBUG)(INT32, INT32, UINT32, UINT32);
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
