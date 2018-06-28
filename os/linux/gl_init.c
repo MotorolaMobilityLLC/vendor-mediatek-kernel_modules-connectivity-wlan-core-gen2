@@ -485,7 +485,7 @@ static const struct wiphy_vendor_command mtk_wlan_vendor_ops[] = {
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV | WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_set_roaming_policy
 	},
-	/* Get Supported Feature Set*/
+	/* Get Supported Feature Set */
 	{
 		{
 			.vendor_id = GOOGLE_OUI,
@@ -494,6 +494,16 @@ static const struct wiphy_vendor_command mtk_wlan_vendor_ops[] = {
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
 				WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_get_supported_feature_set
+	},
+	/* Set Tx Power Scenario */
+	{
+		{
+			.vendor_id = GOOGLE_OUI,
+			.subcmd = WIFI_SUBCMD_SELECT_TX_POWER_SCENARIO
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_set_tx_power_scenario
 	},
 };
 

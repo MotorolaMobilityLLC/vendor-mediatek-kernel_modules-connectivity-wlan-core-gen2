@@ -1074,6 +1074,21 @@ enum ENUM_WIFI_LOG_LEVEL_SUPPORT_T {
 	ENUM_WIFI_LOG_LEVEL_SUPPORT_NUM
 };
 
+struct TX_POWER_SCENARIO_ENTRY {
+	bool fgEnable2G;
+	uint8_t ucTxPowerLimit2G;
+	bool fgEnable5G;
+	uint8_t ucTxPowerLimit5G;
+};
+
+struct PARAM_TX_POWER_LIMIT {
+	/* iScenario: -2:use following values, -1:reset, >=0:scenario index */
+	int32_t iScenario;
+	bool fgEnable2G;
+	uint8_t ucTxPowerLimit2G;
+	bool fgEnable5G;
+	uint8_t ucTxPowerLimit5G;
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -1951,3 +1966,7 @@ WLAN_STATUS
 wlanoidSetWifiLogLevel(IN P_ADAPTER_T prAdapter,
 			IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen, OUT PUINT_32 pu4SetInfoLen);
 
+uint32_t
+wlanoidSetTxPowerLimit(IN P_ADAPTER_T prAdapter,
+			IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen,
+			OUT PUINT_32 pu4SetInfoLen);

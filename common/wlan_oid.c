@@ -40,6 +40,23 @@
 *                            P U B L I C   D A T A
 *******************************************************************************
 */
+/* tx power scenario enum:
+ * declared in /hardware/libhardware_legacy/include/hardware_legacy/wifi_hal.h
+ * enum ENUM_TX_POWER_SCENARIO {
+ *	WIFI_POWER_SCENARIO_VOICE_CALL       = 0,
+ *	WIFI_POWER_SCENARIO_ON_HEAD_CELL_OFF = 1,
+ *	WIFI_POWER_SCENARIO_ON_HEAD_CELL_ON  = 2,
+ *	WIFI_POWER_SCENARIO_ON_BODY_CELL_OFF = 3,
+ *	WIFI_POWER_SCENARIO_ON_BODY_CELL_ON  = 4,
+ * };
+ */
+static struct TX_POWER_SCENARIO_ENTRY g_txPowerScenario[] = {
+	{ TRUE, 12, TRUE, 12 }, /* WIFI_POWER_SCENARIO_VOICE_CALL */
+	{ TRUE, 12, TRUE, 12 }, /* WIFI_POWER_SCENARIO_ON_HEAD_CELL_OFF */
+	{ TRUE, 12, TRUE, 12 }, /* WIFI_POWER_SCENARIO_ON_HEAD_CELL_ON */
+	{ TRUE, 12, TRUE, 12 }, /* WIFI_POWER_SCENARIO_ON_BODY_CELL_OFF */
+	{ TRUE, 12, TRUE, 12 }, /* WIFI_POWER_SCENARIO_ON_BODY_CELL_ON */
+};
 
 /******************************************************************************
 *                           P R I V A T E   D A T A
@@ -12502,3 +12519,118 @@ wlanoidSetWifiLogLevel(IN P_ADAPTER_T prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
+uint32_t wlanoidSetTxPowerLimit(IN P_ADAPTER_T prAdapter,
+				IN PVOID pvSetBuffer,
+				IN UINT_32 u4SetBufferLen,
+				OUT PUINT_32 pu4SetInfoLen)
+{
+	/* TxPwrBackOffParam's 0th byte contains enable/disable TxPowerBackOff for 2G */
+	/* TxPwrBackOffParam's 1st byte contains default TxPowerBackOff value for 2G */
+	/* TxPwrBackOffParam's 2nd byte contains enable/disable TxPowerBackOff for 5G */
+	/* TxPwrBackOffParam's 3rd byte contains default TxPowerBackOff value for 5G */
+	unsigned long TxPwrBackOffParam = 0;
+	struct PARAM_TX_POWER_LIMIT *prTxPwrLimit;
+	bool fgGotData = FALSE;
+	uint32_t rStatus;
+
+	ASSERT(prAdapter);
+	ASSERT(pvSetBuffer);
+
+	prTxPwrLimit = (struct PARAM_TX_POWER_LIMIT *)pvSetBuffer;
+	DBGLOG(OID, INFO,
+		"scenario=%d, enable2G=%d, txPowerLimit2G=%u, enable5G=%d, txPowerLimit5G=%u\n",
+		prTxPwrLimit->iScenario,
+		prTxPwrLimit->fgEnable2G, prTxPwrLimit->ucTxPowerLimit2G,
+		prTxPwrLimit->fgEnable5G, prTxPwrLimit->ucTxPowerLimit5G);
+
+	if (prTxPwrLimit->iScenario == -1) {
+		/* reset tx power limitation */
+		TxPwrBackOffParam = 0; /* First byte is start/stop */
+		fgGotData = TRUE;
+	} else if (prTxPwrLimit->iScenario == -2) {
+		/* use the values in prTxPwrLimit */
+		TxPwrBackOffParam |= prTxPwrLimit->fgEnable2G;
+		TxPwrBackOffParam |= (prTxPwrLimit->ucTxPowerLimit2G * 2) << 8;
+		TxPwrBackOffParam |= prTxPwrLimit->fgEnable5G << 16;
+		TxPwrBackOffParam |= (unsigned long)
+				(prTxPwrLimit->ucTxPowerLimit5G * 2) << 24;
+		fgGotData = TRUE;
+	} else if (prTxPwrLimit->iScenario >= 0) {
+		/* use the global variable g_txPowerScenario
+		 * by scenario index
+		 */
+		uint32_t u4Idx = (uint32_t)prTxPwrLimit->iScenario;
+		uint32_t u4IdxMax = sizeof(g_txPowerScenario);
+
+		if (u4IdxMax > 0) {
+			if (u4Idx >= u4IdxMax) {
+				DBGLOG(OID, ERROR,
+				       "invalid index=%u, max=%u\n",
+				       u4Idx, u4IdxMax);
+				return -EINVAL;
+			}
+
+			TxPwrBackOffParam |=
+				g_txPowerScenario[u4Idx].fgEnable2G;
+			TxPwrBackOffParam |=
+				(g_txPowerScenario[u4Idx].ucTxPowerLimit2G * 2)
+				<< 8;
+			TxPwrBackOffParam |=
+				g_txPowerScenario[u4Idx].fgEnable5G << 16;
+			TxPwrBackOffParam |= (unsigned long)
+				(g_txPowerScenario[u4Idx].ucTxPowerLimit5G * 2)
+				<< 24;
+			fgGotData = TRUE;
+		} else {
+			/* if size of g_txPowerScenario == 0,
+			 * try to use NVRAM setting
+			 */
+			DBGLOG(OID, INFO,
+				"size of g_txPowerScenario=%u\n", u4IdxMax);
+		}
+	} else {
+		DBGLOG(OID, ERROR, "invalid iScenario=%d\n",
+			prTxPwrLimit->iScenario);
+		return -EINVAL;
+	}
+
+	/* try to use NVRAM setting if values cannot be desided at last step */
+	if (!fgGotData) {
+		P_REG_INFO_T prRegInfo = &(prAdapter->prGlueInfo->rRegInfo);
+
+		if (!prRegInfo) {
+			DBGLOG(OID, INFO, "prRegInfo is NULL\n");
+			return -EFAULT;
+		}
+
+		if (prRegInfo->bTxPowerLimitEnable2G ||
+		    prRegInfo->bTxPowerLimitEnable5G) {
+			TxPwrBackOffParam |= prRegInfo->bTxPowerLimitEnable2G;
+			TxPwrBackOffParam |= (prRegInfo->cTxBackOffMaxPower2G)
+					<< 8;
+			TxPwrBackOffParam |= prRegInfo->bTxPowerLimitEnable5G
+					<< 16;
+			TxPwrBackOffParam |= (unsigned long)
+					(prRegInfo->cTxBackOffMaxPower5G)
+					<< 24;
+			fgGotData = TRUE;
+		}
+	}
+
+	if (!fgGotData) {
+		DBGLOG(OID, ERROR, "fgGotData is FALSE\n");
+		return -EFAULT;
+	}
+
+	DBGLOG(OID, INFO,
+		"set tx power limitation: TxPwrBackOffParam=0x%lx\n",
+		TxPwrBackOffParam);
+
+	rStatus = nicTxPowerBackOff(prAdapter, TxPwrBackOffParam);
+	if (rStatus == WLAN_STATUS_PENDING)
+		rStatus = 0;
+	else
+		rStatus = -EINVAL;
+
+	return rStatus;
+}
