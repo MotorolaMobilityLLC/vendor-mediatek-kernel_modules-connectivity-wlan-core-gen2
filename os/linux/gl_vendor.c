@@ -96,7 +96,7 @@
 /* note: WIFI_FEATURE_GSCAN be enabled just for ACTS test item: scanner */
 #define WIFI_HAL_FEATURE_SET ((WIFI_FEATURE_P2P) |\
 			      (WIFI_FEATURE_SOFT_AP) |\
-			      (WIFI_FEATURE_GSCAN) |\
+			      (WIFI_FEATURE_PNO) |\
 			      (WIFI_FEATURE_TDLS) |\
 			      (WIFI_FEATURE_RSSI_MONITOR) |\
 			      (WIFI_FEATURE_CONTROL_ROAMING) |\
@@ -1929,10 +1929,6 @@ int mtk_cfg80211_vendor_get_supported_feature_set(struct wiphy *wiphy,
 	prRegInfo = &prGlueInfo->rRegInfo;
 	if (!prRegInfo)
 		return -EFAULT;
-
-#if CFG_SUPPORT_SCN_PSCN /* CFG_SUPPORT_PNO */
-	u4FeatureSet |= WIFI_FEATURE_PNO;
-#endif
 
 	if (prRegInfo->ucSupport5GBand)
 		u4FeatureSet |= WIFI_FEATURE_INFRA_5G;
