@@ -1871,6 +1871,63 @@ static INT_32 wlanNetRegister(struct wireless_dev *prWdev)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief A method of struct net_device, to set the randomized mac address
+ *
+ * This method is called before Wifi Framework requests a new conenction with
+ * enabled feature "Connected Random Mac".
+ *
+ * \param[in] ndev	Pointer to struct net_device.
+ * \param[in] addr	Randomized Mac address passed from WIFI framework.
+ *
+ * \return int.
+ */
+/*----------------------------------------------------------------------------*/
+static int wlanSetMacAddress(struct net_device *ndev, void *addr)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	P_BSS_INFO_T prAisBssInfo = NULL;
+	struct sockaddr *sa = NULL;
+	UINT_8 aucMacAddr[MAC_ADDR_LEN];
+	WLAN_STATUS rStatus;
+	UINT_32 u4BufLen = 0;
+
+	/**********************************************************************
+	 * Check if kernel passes valid data to us                            *
+	 **********************************************************************
+	 */
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(ndev));
+	if (!ndev || !addr || !prGlueInfo) {
+		DBGLOG(INIT, ERROR,
+		       "Set macaddr with ndev(%d), glue(%d) and addr(%d)\n",
+		       (ndev == NULL) ? 0 : 1, (prGlueInfo == NULL) ? 0 : 1,
+		       (addr == NULL) ? 0 : 1);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	/**********************************************************************
+	 * 1. Change OwnMacAddr which will be updated to FW through           *
+	 *    rlmActivateNetwork later.                                       *
+	 * 2. Change dev_addr stored in kernel to notify framework that the   *
+	 *    mac addr has been changed and what the new value is.            *
+	 **********************************************************************
+	 */
+	sa = (struct sockaddr *)addr;
+	COPY_MAC_ADDR(aucMacAddr, sa->sa_data);
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetRandomMac,
+			   (PVOID)(&aucMacAddr), sizeof(PARAM_MAC_ADDR_LEN),
+			   FALSE, FALSE, TRUE, FALSE, &u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "set random mac failed:%x\n", rStatus);
+		return -EINVAL;
+	}
+
+	return rStatus;
+}				/* end of wlanSetMacAddr() */
+
+/*----------------------------------------------------------------------------*/
+/*!
 * \brief Unregister the device from the kernel
 *
 * \param[in] prWdev      Pointer to struct net_device.
@@ -1908,6 +1965,7 @@ static const struct net_device_ops wlan_netdev_ops = {
 	.ndo_init = wlanInit,
 	.ndo_uninit = wlanUninit,
 	.ndo_select_queue = wlanSelectQueue,
+	.ndo_set_mac_address = wlanSetMacAddress,
 };
 
 /*----------------------------------------------------------------------------*/
