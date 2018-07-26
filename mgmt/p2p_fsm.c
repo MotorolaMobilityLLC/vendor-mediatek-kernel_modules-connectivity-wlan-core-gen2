@@ -1494,9 +1494,8 @@ VOID p2pFsmRunEventConnectionAbort(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMs
 				LINK_FOR_EACH(prLinkEntry, prStaRecOfClientList) {
 					prCurrStaRec = LINK_ENTRY(prLinkEntry, STA_RECORD_T, rLinkEntry);
 
-					ASSERT(prCurrStaRec);
-
-					if (EQUAL_MAC_ADDR(prCurrStaRec->aucMacAddr, prDisconnMsg->aucTargetID)) {
+					if (prCurrStaRec
+					&& EQUAL_MAC_ADDR(prCurrStaRec->aucMacAddr, prDisconnMsg->aucTargetID)) {
 
 						DBGLOG(P2P, TRACE,
 						       "Disconnecting: %pM\n",
