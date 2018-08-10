@@ -112,6 +112,7 @@
 #define CMD_SET_DBG_LEVEL       "SET_DBG_LEVEL"
 #define CMD_GET_DBG_LEVEL       "GET_DBG_LEVEL"
 #define CMD_SET_FCC_CERT        "SET_FCC_CHANNEL"
+#define CMD_GET_WIFI_TYPE		"GET_WIFI_TYPE"
 #define PRIV_CMD_SIZE			512
 
 static UINT_32 g_ucMiracastMode = MIRACAST_MODE_OFF;
@@ -3381,6 +3382,40 @@ _priv_set_struct(IN struct net_device *prNetDev,
 		}
 		break;
 #endif
+
+	case PRIV_CMD_GET_WIFI_TYPE:
+		{
+			int32_t i4ResultLen;
+
+			u4CmdLen = prIwReqData->data.length;
+			if (u4CmdLen > CMD_OID_BUF_LENGTH) {
+				DBGLOG(REQ, ERROR,
+				       "u4CmdLen:%u > CMD_OID_BUF_LENGTH:%d\n",
+				       u4CmdLen, CMD_OID_BUF_LENGTH);
+				return -EINVAL;
+			}
+
+			if (copy_from_user(&aucOidBuf[0],
+					   prIwReqData->data.pointer,
+					   u4CmdLen)) {
+				DBGLOG(REQ, ERROR, "copy_from_user fail\n");
+				return -EFAULT;
+			}
+
+			i4ResultLen = priv_driver_cmds(prNetDev, aucOidBuf,
+						       u4CmdLen);
+			if (i4ResultLen > 1) {
+				if (copy_to_user(prIwReqData->data.pointer,
+						 &aucOidBuf[0], i4ResultLen)) {
+					DBGLOG(REQ, ERROR, "copy_to_user fail\n");
+					return -EFAULT;
+				}
+			}
+
+			prIwReqData->data.length = i4ResultLen;
+		}
+		break;
+
 	default:
 		return -EOPNOTSUPP;
 	}
@@ -4112,6 +4147,131 @@ static BOOLEAN reqSearchSupportedOidEntry(IN UINT_32 rOid, OUT P_WLAN_REQ_ENTRY 
 	return FALSE;
 }				/* reqSearchSupportedOidEntry */
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Private ioctl driver handler.
+ *
+ * \param[in] pDev Net device requested.
+ * \param[out] pIwReq Pointer to iwreq structure.
+ * \param[in] cmd Private sub-command.
+ *
+ * \retval 0 For success.
+ * \retval -EFAULT If copy from user space buffer fail.
+ * \retval -EOPNOTSUPP Parameter "cmd" not recognized.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+int
+priv_set_driver(IN struct net_device *prNetDev,
+		IN struct iw_request_info *prIwReqInfo,
+		IN union iwreq_data *prIwReqData, IN OUT char *pcExtra)
+{
+	uint32_t u4SubCmd = 0;
+	uint16_t u2Cmd = 0;
+
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+
+	ASSERT(prNetDev);
+	ASSERT(prIwReqData);
+	if (!prNetDev || !prIwReqData) {
+		DBGLOG(REQ, INFO,
+		       "priv_set_driver(): invalid param(0x%p, 0x%p)\n",
+		       prNetDev, prIwReqData);
+		return -EINVAL;
+	}
+
+	u2Cmd = prIwReqInfo->cmd;
+	DBGLOG(REQ, INFO, "prIwReqInfo->cmd %u\n", u2Cmd);
+
+	u4SubCmd = (uint32_t) prIwReqData->data.flags;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	ASSERT(prGlueInfo);
+	if (!prGlueInfo) {
+		DBGLOG(REQ, INFO,
+		       "priv_set_driver(): invalid prGlueInfo(0x%p, 0x%p)\n",
+		       prNetDev,
+		       *((struct GLUE_INFO **) netdev_priv(prNetDev)));
+		return -EINVAL;
+	}
+
+	/* trick,hack in ./net/wireless/wext-priv.c ioctl_private_iw_point */
+	/* because the cmd number is odd (get), the input string will not be
+	 * copy_to_user
+	 */
+
+	DBGLOG(REQ, INFO, "prIwReqData->data.length %u\n",
+	       prIwReqData->data.length);
+
+	/* Use GET type becauase large data by iwpriv. */
+
+	ASSERT(IW_IS_GET(u2Cmd));
+	if (prIwReqData->data.length != 0) {
+		if (!access_ok(VERIFY_READ, prIwReqData->data.pointer,
+			       prIwReqData->data.length)) {
+			DBGLOG(REQ, INFO,
+			       "%s access_ok Read fail written = %d\n",
+			       __func__, i4BytesWritten);
+			return -EFAULT;
+		}
+		if (copy_from_user(pcExtra, prIwReqData->data.pointer,
+				   prIwReqData->data.length)) {
+			DBGLOG(REQ, INFO,
+			       "%s copy_form_user fail written = %d\n",
+			       __func__, prIwReqData->data.length);
+			return -EFAULT;
+		}
+		/* prIwReqData->data.length include the terminate '\0' */
+		pcExtra[prIwReqData->data.length - 1] = 0;
+	}
+
+	if (pcExtra) {
+		DBGLOG(REQ, INFO, "pcExtra %s\n", pcExtra);
+		/* Please check max length in rIwPrivTable */
+		DBGLOG(REQ, INFO, "%s prIwReqData->data.length = %d\n",
+		       __func__, prIwReqData->data.length);
+
+		i4BytesWritten = priv_driver_cmds(prNetDev, pcExtra,
+					  2000 /*prIwReqData->data.length */);
+		DBGLOG(REQ, INFO, "%s i4BytesWritten = %d\n", __func__,
+		       i4BytesWritten);
+	}
+
+	DBGLOG(REQ, INFO, "pcExtra done\n");
+
+	if (i4BytesWritten > 0) {
+		if (i4BytesWritten > 2000)
+			i4BytesWritten = 2000;
+		prIwReqData->data.length =
+			i4BytesWritten;	/* the iwpriv will use the length */
+	} else if (i4BytesWritten == 0) {
+		prIwReqData->data.length = i4BytesWritten;
+	}
+#if 0
+	/* trick,hack in ./net/wireless/wext-priv.c ioctl_private_iw_point */
+	/* because the cmd number is even (set), the return string will not be
+	 * copy_to_user
+	 */
+	ASSERT(IW_IS_SET(u2Cmd));
+	if (!access_ok(VERIFY_WRITE, prIwReqData->data.pointer,
+		       i4BytesWritten)) {
+		DBGLOG(REQ, INFO, "%s access_ok Write fail written = %d\n",
+		       __func__, i4BytesWritten);
+		return -EFAULT;
+	}
+	if (copy_to_user(prIwReqData->data.pointer, pcExtra,
+			 i4BytesWritten)) {
+		DBGLOG(REQ, INFO, "%s copy_to_user fail written = %d\n",
+		       __func__, i4BytesWritten);
+		return -EFAULT;
+	}
+	DBGLOG(RSN, INFO, "%s copy_to_user written = %d\n",
+	       __func__, i4BytesWritten);
+#endif
+	return 0;
+
+} /* priv_set_driver */
+
 #if 0
 /*----------------------------------------------------------------------------*/
 /*!
@@ -4654,6 +4814,48 @@ exit:
 	return ret;
 }
 
+static int priv_driver_get_wifi_type(IN struct net_device *prNetDev,
+				     IN char *pcCommand, IN int i4TotalLen)
+{
+	struct PARAM_GET_WIFI_TYPE rParamGetWifiType;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus;
+	uint32_t u4BytesWritten = 0;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE) {
+		DBGLOG(REQ, ERROR, "GLUE_CHK_PR2 fail\n");
+		return -1;
+	}
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	rParamGetWifiType.prNetDev = prNetDev;
+
+	rStatus = kalIoctl(prGlueInfo,
+			   wlanoidGetWifiType,
+			   (void *)&rParamGetWifiType,
+			   sizeof(void *),
+			   FALSE,
+			   FALSE,
+			   FALSE,
+			   FALSE,
+			   &u4BytesWritten);
+	if (rStatus == WLAN_STATUS_SUCCESS) {
+		if (u4BytesWritten > 0) {
+			if (u4BytesWritten > i4TotalLen)
+				u4BytesWritten = i4TotalLen;
+			kalMemCopy(pcCommand, rParamGetWifiType.arWifiTypeName,
+				   u4BytesWritten);
+		}
+	} else {
+		DBGLOG(REQ, ERROR, "rStatus=%x\n", rStatus);
+		u4BytesWritten = 0;
+	}
+
+	return (int)u4BytesWritten;
+}
+
 #if CFG_SUPPORT_BATCH_SCAN
 #define CMD_BATCH_SET           "WLS_BATCHING SET"
 #define CMD_BATCH_GET           "WLS_BATCHING GET"
@@ -5008,6 +5210,8 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 		else if (!strncasecmp(pcCommand, CMD_FW_PARAM, strlen(CMD_FW_PARAM)))
 			kalIoctl(prGlueInfo, wlanoidSetFwParam, (PVOID)(pcCommand + 13),
 				 i4TotalLen - 13, FALSE, FALSE, FALSE, FALSE, &i4BytesWritten);
+		else if (!strncasecmp(pcCommand, CMD_GET_WIFI_TYPE, strlen(CMD_GET_WIFI_TYPE)))
+			i4BytesWritten = priv_driver_get_wifi_type(prNetDev, pcCommand, i4TotalLen);
 		else
 			i4CmdFound = 0;
 	}

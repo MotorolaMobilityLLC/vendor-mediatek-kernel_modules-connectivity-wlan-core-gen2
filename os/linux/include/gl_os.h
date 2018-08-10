@@ -224,6 +224,8 @@ extern int  wifi_fwlog_onoff_status(void);
 extern void wifi_fwlog_event_func_register(wifi_fwlog_event_func_cb pfFwlog);
 #endif
 
+extern struct net_device *gPrDev;
+
 /*******************************************************************************
 *                              C O N S T A N T S
 ********************************************************************************

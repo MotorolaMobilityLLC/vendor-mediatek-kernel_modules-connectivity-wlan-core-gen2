@@ -62,6 +62,7 @@ extern VOID rlmCmd(P_GLUE_INFO_T prGlueInfo, UINT_8 *prInBuf, UINT_32 u4InBufLen
 #define IOCTL_GET_INTS                  (SIOCIWFIRSTPRIV + 13)
 #define IOCTL_SET_STRING				(SIOCIWFIRSTPRIV + 14)
 #define IOCTL_GET_STRING                (SIOCIWFIRSTPRIV + 15)
+#define IOCTL_GET_DRIVER                (SIOCIWFIRSTPRIV + 17)
 
 #define PRIV_CMD_REG_DOMAIN             0
 #define PRIV_CMD_BEACON_PERIOD          1
@@ -121,6 +122,9 @@ extern VOID rlmCmd(P_GLUE_INFO_T prGlueInfo, UINT_8 *prInBuf, UINT_32 u4InBufLen
 #define PRIV_CMD_MET_PROFILING			33
 
 #define PRIV_CMD_DUMP_DRIVER			34
+
+/* wifi type: 11g, 11n, ... */
+#define  PRIV_CMD_GET_WIFI_TYPE			41
 
 /* other string command ID */
 #define PRIV_CMD_OTHER_TDLS				0x00
@@ -286,6 +290,12 @@ priv_set_struct(IN struct net_device *prNetDev,
 int
 priv_get_struct(IN struct net_device *prNetDev,
 		IN struct iw_request_info *prIwReqInfo, IN union iwreq_data *prIwReqData, IN OUT char *pcExtra);
+
+int
+priv_set_driver(IN struct net_device *prNetDev,
+		IN struct iw_request_info *prIwReqInfo,
+		IN union iwreq_data *prIwReqData,
+		IN OUT char *pcExtra);
 
 UINT_32 CmdStringDecParse(IN UINT_8 *InStr, OUT UINT_8 **OutStr, OUT UINT_32 *OutLen);
 

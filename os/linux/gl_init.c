@@ -1120,7 +1120,7 @@ int wlanDoIOCTL(struct net_device *prDev, struct ifreq *prIfReq, int i4Cmd)
 /*----------------------------------------------------------------------------*/
 
 static struct delayed_work workq;
-static struct net_device *gPrDev;
+struct net_device *gPrDev;
 static BOOLEAN fgIsWorkMcStart = FALSE;
 static BOOLEAN fgIsWorkMcEverInit = FALSE;
 static struct wireless_dev *gprWdev;

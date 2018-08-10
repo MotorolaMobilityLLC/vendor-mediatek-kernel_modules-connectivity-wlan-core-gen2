@@ -12680,3 +12680,69 @@ uint32_t wlanoidSetTxPowerLimit(IN P_ADAPTER_T prAdapter,
 
 	return rStatus;
 }
+
+WLAN_STATUS wlanoidGetWifiType(IN P_ADAPTER_T prAdapter,
+			    IN void *pvSetBuffer,
+			    IN uint32_t u4SetBufferLen,
+			    OUT uint32_t *pu4SetInfoLen)
+{
+	struct PARAM_GET_WIFI_TYPE *prParamGetWifiType;
+	P_BSS_INFO_T prBssInfo = NULL;
+	uint8_t ucBssIdx;
+	uint8_t ucPhyType;
+	uint8_t *pNameBuf;
+
+	*pu4SetInfoLen = 0;
+
+	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
+		DBGLOG(OID, ERROR,
+		       "Fail in query receive error! (Adapter not ready). ACPI=D%d, Radio=%d\n",
+		       prAdapter->rAcpiState, prAdapter->fgIsRadioOff);
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+	}
+
+	prParamGetWifiType = (struct PARAM_GET_WIFI_TYPE *)pvSetBuffer;
+	if (prParamGetWifiType->prNetDev == gPrDev)
+		ucBssIdx = (int)NETWORK_TYPE_AIS_INDEX;
+	else
+		ucBssIdx = (int)NETWORK_TYPE_P2P_INDEX;
+
+	DBGLOG(OID, INFO, "bss index=%d\n", ucBssIdx);
+
+	kalMemZero(prParamGetWifiType->arWifiTypeName,
+		   sizeof(prParamGetWifiType->arWifiTypeName));
+	pNameBuf = &prParamGetWifiType->arWifiTypeName[0];
+
+	if (ucBssIdx >= NETWORK_TYPE_INDEX_NUM) {
+		DBGLOG(OID, ERROR, "invalid bss index: %u\n", ucBssIdx);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+	if ((!prBssInfo) || (!IS_BSS_ACTIVE(prBssInfo))) {
+		DBGLOG(OID, ERROR, "invalid BssInfo: %p, %u\n",
+		       prBssInfo, ucBssIdx);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	ucPhyType = prBssInfo->ucPhyTypeSet;
+	if (ucPhyType & PHY_TYPE_SET_802_11N)
+		kalStrCpy(pNameBuf, "11N");
+	else if (ucPhyType & PHY_TYPE_SET_802_11B)
+		kalStrCpy(pNameBuf, "11B");
+	else if (ucPhyType & PHY_TYPE_SET_802_11G)
+		kalStrCpy(pNameBuf, "11G");
+	else if (ucPhyType & PHY_TYPE_SET_802_11A)
+		kalStrCpy(pNameBuf, "11A");
+	else
+		DBGLOG(OID, INFO,
+		       "unknown wifi type, prBssInfo->ucPhyTypeSet: %u\n",
+		       ucPhyType);
+
+	*pu4SetInfoLen = kalStrLen(pNameBuf);
+
+	DBGLOG(OID, INFO, "wifi type=[%s](%d), phyType=%u\n",
+	       pNameBuf, *pu4SetInfoLen, ucPhyType);
+
+	return WLAN_STATUS_SUCCESS;
+}
