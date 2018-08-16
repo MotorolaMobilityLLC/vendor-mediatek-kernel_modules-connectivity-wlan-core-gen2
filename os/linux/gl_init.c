@@ -2298,15 +2298,17 @@ void wlanHandleSystemSuspend(void)
 			    (P_PARAM_NETWORK_ADDRESS) ((ULONG) prParamNetAddr + sizeof(PARAM_NETWORK_ADDRESS));
 			u4Len += OFFSET_OF(PARAM_NETWORK_ADDRESS, aucAddress) + sizeof(PARAM_NETWORK_ADDRESS);
 		}
-#ifdef CONFIG_IPV6
-		for (i = 0; i < u4NumIPv6; i++) {
-			prParamNetAddr->u2AddressLength = 6;
-			prParamNetAddr->u2AddressType = PARAM_PROTOCOL_ID_TCP_IP;
-			kalMemCopy(prParamNetAddr->aucAddress, ip6, sizeof(ip6));
-			prParamNetAddr = (P_PARAM_NETWORK_ADDRESS) ((ULONG) prParamNetAddr + sizeof(ip6));
-			u4Len += OFFSET_OF(PARAM_NETWORK_ADDRESS, aucAddress) + sizeof(ip6);
-		}
-#endif
+/* u4NumIPv6 never accumulate
+ * #ifdef CONFIG_IPV6
+ *		for (i = 0; i < u4NumIPv6; i++) {
+ *			prParamNetAddr->u2AddressLength = 6;
+ *			prParamNetAddr->u2AddressType = PARAM_PROTOCOL_ID_TCP_IP;
+ *			kalMemCopy(prParamNetAddr->aucAddress, ip6, sizeof(ip6));
+ *			prParamNetAddr = (P_PARAM_NETWORK_ADDRESS) ((ULONG) prParamNetAddr + sizeof(ip6));
+ *			u4Len += OFFSET_OF(PARAM_NETWORK_ADDRESS, aucAddress) + sizeof(ip6);
+ *		}
+ * #endif
+ */
 		ASSERT(u4Len <= sizeof(g_aucBufIpAddr));
 
 		rStatus = kalIoctl(prGlueInfo,
