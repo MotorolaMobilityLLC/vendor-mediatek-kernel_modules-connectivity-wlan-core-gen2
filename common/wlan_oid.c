@@ -12606,7 +12606,8 @@ uint32_t wlanoidSetTxPowerLimit(IN P_ADAPTER_T prAdapter,
 		 * by scenario index
 		 */
 		uint32_t u4Idx = (uint32_t)prTxPwrLimit->iScenario;
-		uint32_t u4IdxMax = sizeof(g_txPowerScenario);
+		uint32_t u4IdxMax = sizeof(g_txPowerScenario) /
+			sizeof(struct TX_POWER_SCENARIO_ENTRY);
 
 		if (u4IdxMax > 0) {
 			if (u4Idx >= u4IdxMax) {
