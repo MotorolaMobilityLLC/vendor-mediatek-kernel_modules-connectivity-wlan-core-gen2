@@ -1128,7 +1128,7 @@ static struct wireless_dev *gprWdev;
 static UINT_8 wlanNvramBufHandler(PVOID ctx, const CHAR *buf, UINT_16 length)
 {
 	DBGLOG(INIT, INFO, "buf = %p, length = %u\n", buf, length);
-	if (buf == NULL || length <= 0 || length != sizeof(g_aucNvram))
+	if (buf == NULL || length <= 0 || length > sizeof(g_aucNvram))
 		return -EFAULT;
 
 	if (copy_from_user(g_aucNvram, buf, length)) {
