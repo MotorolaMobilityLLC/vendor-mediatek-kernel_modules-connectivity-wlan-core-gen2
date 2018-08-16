@@ -2000,7 +2000,7 @@ kalIoctl(IN P_GLUE_INFO_T prGlueInfo,
 		else
 			ret = prIoReq->rStatus;
 		if (ret != WLAN_STATUS_SUCCESS)
-			DBGLOG(OID, WARN, "kalIoctl: ret ErrCode: %d\n", ret);
+			DBGLOG(OID, WARN, "kalIoctl: ret ErrCode: %x\n", ret);
 	} else {
 		/* Case 2: timeout */
 		/* clear pending OID's cmd in CMD queue */
