@@ -12703,10 +12703,18 @@ WLAN_STATUS wlanoidGetWifiType(IN P_ADAPTER_T prAdapter,
 	}
 
 	prParamGetWifiType = (struct PARAM_GET_WIFI_TYPE *)pvSetBuffer;
-	if (prParamGetWifiType->prNetDev == gPrDev)
-		ucBssIdx = (int)NETWORK_TYPE_AIS_INDEX;
-	else
-		ucBssIdx = (int)NETWORK_TYPE_P2P_INDEX;
+	if ((gPrDev != NULL) &&
+	    (prParamGetWifiType->prNetDev == gPrDev))
+		ucBssIdx = (uint8_t)NETWORK_TYPE_AIS_INDEX;
+	else if ((g_P2pPrDev != NULL) &&
+		 (prParamGetWifiType->prNetDev == g_P2pPrDev))
+		ucBssIdx = (uint8_t)NETWORK_TYPE_P2P_INDEX;
+	else {
+		DBGLOG(OID, ERROR,
+		       "network type index error! %p, %p, %p\n",
+		       prParamGetWifiType->prNetDev, gPrDev, g_P2pPrDev);
+		return WLAN_STATUS_INVALID_DATA;
+	}
 
 	DBGLOG(OID, INFO, "bss index=%d\n", ucBssIdx);
 
@@ -12728,13 +12736,13 @@ WLAN_STATUS wlanoidGetWifiType(IN P_ADAPTER_T prAdapter,
 
 	ucPhyType = prBssInfo->ucPhyTypeSet;
 	if (ucPhyType & PHY_TYPE_SET_802_11N)
-		kalStrCpy(pNameBuf, "11N");
+		kalStrnCpy(pNameBuf, "11N", 3);
 	else if (ucPhyType & PHY_TYPE_SET_802_11B)
-		kalStrCpy(pNameBuf, "11B");
+		kalStrnCpy(pNameBuf, "11B", 3);
 	else if (ucPhyType & PHY_TYPE_SET_802_11G)
-		kalStrCpy(pNameBuf, "11G");
+		kalStrnCpy(pNameBuf, "11G", 3);
 	else if (ucPhyType & PHY_TYPE_SET_802_11A)
-		kalStrCpy(pNameBuf, "11A");
+		kalStrnCpy(pNameBuf, "11A", 3);
 	else
 		DBGLOG(OID, INFO,
 		       "unknown wifi type, prBssInfo->ucPhyTypeSet: %u\n",
