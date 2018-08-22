@@ -12696,6 +12696,7 @@ WLAN_STATUS wlanoidGetWifiType(IN P_ADAPTER_T prAdapter,
 	P_BSS_INFO_T prBssInfo = NULL;
 	uint8_t ucBssIdx;
 	uint8_t ucPhyType;
+	uint8_t ucMaxCopySize;
 	uint8_t *pNameBuf;
 
 	*pu4SetInfoLen = 0;
@@ -12726,6 +12727,7 @@ WLAN_STATUS wlanoidGetWifiType(IN P_ADAPTER_T prAdapter,
 	kalMemZero(prParamGetWifiType->arWifiTypeName,
 		   sizeof(prParamGetWifiType->arWifiTypeName));
 	pNameBuf = &prParamGetWifiType->arWifiTypeName[0];
+	ucMaxCopySize = sizeof(prParamGetWifiType->arWifiTypeName) - 1;
 
 	if (ucBssIdx >= NETWORK_TYPE_INDEX_NUM) {
 		DBGLOG(OID, ERROR, "invalid bss index: %u\n", ucBssIdx);
@@ -12741,13 +12743,13 @@ WLAN_STATUS wlanoidGetWifiType(IN P_ADAPTER_T prAdapter,
 
 	ucPhyType = prBssInfo->ucPhyTypeSet;
 	if (ucPhyType & PHY_TYPE_SET_802_11N)
-		kalStrnCpy(pNameBuf, "11N", 3);
+		kalStrnCpy(pNameBuf, "11N", ucMaxCopySize);
 	else if (ucPhyType & PHY_TYPE_SET_802_11B)
-		kalStrnCpy(pNameBuf, "11B", 3);
+		kalStrnCpy(pNameBuf, "11B", ucMaxCopySize);
 	else if (ucPhyType & PHY_TYPE_SET_802_11G)
-		kalStrnCpy(pNameBuf, "11G", 3);
+		kalStrnCpy(pNameBuf, "11G", ucMaxCopySize);
 	else if (ucPhyType & PHY_TYPE_SET_802_11A)
-		kalStrnCpy(pNameBuf, "11A", 3);
+		kalStrnCpy(pNameBuf, "11A", ucMaxCopySize);
 	else
 		DBGLOG(OID, INFO,
 		       "unknown wifi type, prBssInfo->ucPhyTypeSet: %u\n",
