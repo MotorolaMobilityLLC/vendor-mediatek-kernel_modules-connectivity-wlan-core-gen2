@@ -2932,7 +2932,7 @@ P_MSDU_INFO_T p2pFuncProcessP2pProbeRsp(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO
 				}
 			}	/*  VENDOR_OUI_TYPE_WFD */
 		} else {
-			DBGLOG(P2P, INFO,
+			DBGLOG(P2P, TRACE,
 				"Other vender IE is found in probe resp (supp). Len %u\n", IE_SIZE(pucIEBuf));
 			if ((prAdapter->prGlueInfo->prP2PInfo->u2VenderIELen + IE_SIZE(pucIEBuf)) <
 				1024) {

@@ -946,7 +946,7 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 	UINT_32 u4OriRegValue = 0;
 	UINT_32 u4NextRegValue = 0;
 
-	DBGLOG(P2P, INFO, "--> %s() ext list,wait :%d\n"
+	DBGLOG(P2P, TRACE, "--> %s() ext list,wait :%d\n"
 		, __func__, params->wait);
 
 	do {
