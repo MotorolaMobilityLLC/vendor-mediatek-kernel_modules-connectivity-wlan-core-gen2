@@ -1373,12 +1373,17 @@ static void wlanSetMulticastListWorkQueue(struct work_struct *work)
 
 		prMCAddrList = kalMemAlloc(MAX_NUM_GROUP_ADDR * ETH_ALEN, VIR_MEM_TYPE);
 
+		/* Avoid race condition with kernel net subsystem */
+		netif_addr_lock_bh(prDev);
+
 		netdev_for_each_mc_addr(ha, prDev) {
 			if ((i < MAX_NUM_GROUP_ADDR) && (ha != NULL)) {
 				memcpy((prMCAddrList + i * ETH_ALEN), ha->addr, ETH_ALEN);
 				i++;
 			}
 		}
+
+		netif_addr_unlock_bh(prDev);
 
 		kalHaltUnlock();
 
