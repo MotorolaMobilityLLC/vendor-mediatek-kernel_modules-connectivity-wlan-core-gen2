@@ -5682,6 +5682,42 @@ VOID wlanCfgApply(IN P_ADAPTER_T prAdapter)
 		DBGLOG(INIT, INFO, "Ap Mode Uapsd Status: %s\n", aucValue);
 	}
 
+	prWifiVar->aucAifsN[WMM_AC_BE_INDEX] =
+		(UINT_8) wlanCfgGetUint32(prAdapter, "BeAifsN", 3);
+	prWifiVar->aucAifsN[WMM_AC_BK_INDEX] =
+		(UINT_8) wlanCfgGetUint32(prAdapter, "BkAifsN", 7);
+	prWifiVar->aucAifsN[WMM_AC_VI_INDEX] =
+		(UINT_8) wlanCfgGetUint32(prAdapter, "ViAifsN", 1);
+	prWifiVar->aucAifsN[WMM_AC_VO_INDEX] =
+		(UINT_8) wlanCfgGetUint32(prAdapter, "VoAifsN", 1);
+
+	prWifiVar->aucCwMin[WMM_AC_BE_INDEX] =
+		(UINT_8) wlanCfgGetUint32(prAdapter, "BeCwMin", 4);
+	prWifiVar->aucCwMin[WMM_AC_BK_INDEX] =
+		(UINT_8) wlanCfgGetUint32(prAdapter, "BkCwMin", 4);
+	prWifiVar->aucCwMin[WMM_AC_VI_INDEX] =
+		(UINT_8) wlanCfgGetUint32(prAdapter, "ViCwMin", 3);
+	prWifiVar->aucCwMin[WMM_AC_VO_INDEX] =
+		(UINT_8) wlanCfgGetUint32(prAdapter, "VoCwMin", 2);
+
+	prWifiVar->au2CwMax[WMM_AC_BE_INDEX] =
+		(UINT_16) wlanCfgGetUint32(prAdapter, "BeCwMax", 7);
+	prWifiVar->au2CwMax[WMM_AC_BK_INDEX] =
+		(UINT_16) wlanCfgGetUint32(prAdapter, "BkCwMax", 10);
+	prWifiVar->au2CwMax[WMM_AC_VI_INDEX] =
+		(UINT_16) wlanCfgGetUint32(prAdapter, "ViCwMax", 4);
+	prWifiVar->au2CwMax[WMM_AC_VO_INDEX] =
+		(UINT_16) wlanCfgGetUint32(prAdapter, "VoCwMax", 3);
+
+	prWifiVar->au2TxOp[WMM_AC_BE_INDEX] =
+		(UINT_16) wlanCfgGetUint32(prAdapter, "BeTxOp", 0);
+	prWifiVar->au2TxOp[WMM_AC_BK_INDEX] =
+		(UINT_16) wlanCfgGetUint32(prAdapter, "BkTxOp", 0);
+	prWifiVar->au2TxOp[WMM_AC_VI_INDEX] =
+		(UINT_16) wlanCfgGetUint32(prAdapter, "ViTxOp", 94);
+	prWifiVar->au2TxOp[WMM_AC_VO_INDEX] =
+		(UINT_16) wlanCfgGetUint32(prAdapter, "VoTxOp", 47);
+
 	prAdapter->prGlueInfo->i4Priority = wlanCfgGetInt32(prAdapter, "RTPri", 0);
 	/* TODO: Apply other Config */
 }

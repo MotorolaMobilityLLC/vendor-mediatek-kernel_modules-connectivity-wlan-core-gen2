@@ -589,6 +589,11 @@ typedef struct _WIFI_VAR_T {
 	struct RADIO_MEASUREMENT_REPORT_PARAMS rRmRepParams;
 
 	struct WMM_INFO rWmmInfo;
+
+	UINT_8 aucAifsN[WMM_AC_INDEX_NUM];
+	UINT_8 aucCwMin[WMM_AC_INDEX_NUM];
+	UINT_16 au2CwMax[WMM_AC_INDEX_NUM];
+	UINT_16 au2TxOp[WMM_AC_INDEX_NUM];
 } WIFI_VAR_T, *P_WIFI_VAR_T;	/* end of _WIFI_VAR_T */
 
 /* cnm_timer module */
