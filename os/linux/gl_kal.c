@@ -34,6 +34,7 @@
 #include <mt_sleep.h>
 #endif
 #endif
+#include "connectivity_build_in_adapter.h"
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -4330,16 +4331,6 @@ VOID kalSchedScanStopped(IN P_GLUE_INFO_T prGlueInfo)
 }
 
 #if CFG_SUPPORT_WAKEUP_REASON_DEBUG
-/* if SPM is not implement this function, we will use this default one */
-unsigned int __weak slp_get_wake_reason(VOID)
-{
-	return WR_NONE;
-}
-/* if SPM is not implement this function, we will use this default one */
-UINT_32 __weak spm_get_last_wakeup_src(VOID)
-{
-	return 0;
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -4365,7 +4356,7 @@ BOOLEAN kalIsWakeupByWlan(P_ADAPTER_T  prAdapter)
 	 * it. then we should return FALSE always. otherwise,  if slp_get_wake_reason returns WR_WAKE_SRC,
 	 * then it means the host is suspend successfully.
 	 */
-	if (slp_get_wake_reason() != WR_WAKE_SRC)
+	if (KERNEL_slp_get_wake_reason() != WR_WAKE_SRC)
 		return FALSE;
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0))
@@ -4373,13 +4364,14 @@ BOOLEAN kalIsWakeupByWlan(P_ADAPTER_T  prAdapter)
 	 * spm_get_last_wakeup_src will returns the last wakeup source,
 	 *  WAKE_SRC_R12_CONN2AP_SPM_WAKEUP_B is connsys
 	 */
-	return !!(spm_get_last_wakeup_src() & WAKE_SRC_R12_CONN2AP_SPM_WAKEUP_B);
+	return !!(KERNEL_spm_get_last_wakeup_src() &
+				WAKE_SRC_R12_CONN2AP_SPM_WAKEUP_B);
 #else
 	/*
 	 * spm_get_last_wakeup_src will returns the last wakeup source,
 	 * WAKE_SRC_CONN2AP is connsys
 	 */
-	return !!(spm_get_last_wakeup_src() & WAKE_SRC_CONN2AP);
+	return !!(KERNEL_spm_get_last_wakeup_src() & WAKE_SRC_CONN2AP);
 #endif
 }
 #endif
