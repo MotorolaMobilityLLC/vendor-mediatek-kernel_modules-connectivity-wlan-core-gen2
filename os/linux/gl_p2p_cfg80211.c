@@ -741,11 +741,41 @@ int mtk_p2p_cfg80211_change_beacon(struct wiphy *wiphy, struct net_device *dev, 
 	return i4Rslt;
 }				/* mtk_p2p_cfg80211_change_beacon */
 
+UINT_32
+mtk_oid_stop_ap_role(P_ADAPTER_T prAdapter, void *pvSetBuffer,
+	UINT_32 u4SetBufferLen, UINT_32 *pu4SetInfoLen)
+{
+	unsigned char u4Idx = 0;
+
+	if ((prAdapter == NULL) || (pvSetBuffer == NULL)
+		|| (pu4SetInfoLen == NULL))
+		return WLAN_STATUS_FAILURE;
+
+	*pu4SetInfoLen = sizeof(unsigned char);
+	if (u4SetBufferLen < sizeof(unsigned char))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	ASSERT(pvSetBuffer);
+	u4Idx = *(unsigned char *) pvSetBuffer;
+
+	DBGLOG(INIT, TRACE, "ucRoleIdx = %d\n", u4Idx);
+
+	p2pFsmRunEventStopAP(prAdapter, NULL);
+
+	DBGLOG(INIT, INFO, "done, ucRoleIdx = %d\n", u4Idx);
+
+	return 0;
+
+}
+
 int mtk_p2p_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *dev)
 {
 	P_GLUE_INFO_T prGlueInfo = (P_GLUE_INFO_T) NULL;
 	INT_32 i4Rslt = -EINVAL;
-	P_MSG_P2P_SWITCH_OP_MODE_T prP2pSwitchMode = (P_MSG_P2P_SWITCH_OP_MODE_T) NULL;
+
+	unsigned char u4Idx = 0;
+	UINT_32 rStatus;
+	UINT_32 u4BufLen;
 
 	do {
 		if (wiphy == NULL)
@@ -753,19 +783,16 @@ int mtk_p2p_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *dev)
 
 		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_stop_ap.\n");
 		prGlueInfo = *((P_GLUE_INFO_T *) wiphy_priv(wiphy));
-
-		/* Switch OP MOde. */
-		prP2pSwitchMode = cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG, sizeof(MSG_P2P_SWITCH_OP_MODE_T));
-
-		if (prP2pSwitchMode == NULL) {
-			ASSERT(FALSE);
-			i4Rslt = -ENOMEM;
+		if (prGlueInfo == NULL)
 			break;
-		}
 
-		prP2pSwitchMode->rMsgHdr.eMsgId = MID_MNY_P2P_STOP_AP;
-
-		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (P_MSG_HDR_T) prP2pSwitchMode, MSG_SEND_METHOD_BUF);
+		rStatus = kalIoctl(prGlueInfo,
+			mtk_oid_stop_ap_role, &u4Idx,
+			sizeof(unsigned char),
+			FALSE, FALSE, TRUE, TRUE,
+			&u4BufLen);
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			DBGLOG(REQ, ERROR, "stop ap fail 0x%x\n", rStatus);
 
 		i4Rslt = 0;
 #if CFG_SPM_WORKAROUND_FOR_HOTSPOT
