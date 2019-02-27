@@ -10764,6 +10764,37 @@ WLAN_STATUS wlanoidQueryCfgRead(IN P_ADAPTER_T prAdapter,
 			u4QueryBufferLen);
 	return rStatus;
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to set fw cfg info
+ *
+ * \param[in] prAdapter      Pointer to the Adapter structure.
+ * \param[in] pvSetBuffer    Pointer to the buffer that holds the data to be
+ *                           set.
+ * \param[in] u4SetBufferLen The length of the set buffer.
+ * \param[out] pu4SetInfoLen If the call is successful, returns the number of
+ *                           bytes read from the set buffer. If the call failed
+ *                           due to invalid length of the set buffer, returns
+ *                           the amount of storage needed.
+ *
+ * \retval WLAN_STATUS_INVALID_DATA
+ * \retval WLAN_STATUS_SUCCESS
+ */
+/*----------------------------------------------------------------------------*/
+WLAN_STATUS wlanoidSetFwParam(IN P_ADAPTER_T prAdapter,
+			      IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen,
+			      OUT PUINT_32 pu4SetInfoLen)
+{
+	ASSERT(prAdapter);
+
+	if (!pvSetBuffer || !u4SetBufferLen) {
+		DBGLOG(OID, ERROR, "Buffer is NULL\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+	DBGLOG(OID, INFO, "Fw Params: %s\n", (PUINT_8)pvSetBuffer);
+	return wlanFwCfgParse(prAdapter, (PUINT_8)pvSetBuffer);
+}
 #endif
 
 WLAN_STATUS
