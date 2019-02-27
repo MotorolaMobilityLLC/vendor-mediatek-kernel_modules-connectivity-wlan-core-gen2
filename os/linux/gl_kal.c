@@ -1251,7 +1251,7 @@ kalIndicateStatusAndComplete(IN P_GLUE_INFO_T prGlueInfo, IN WLAN_STATUS eStatus
 			   prGlueInfo->prScanRequest, ScanCnt, ScanDoneFailCnt);
 		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 		if (prGlueInfo->prScanRequest != NULL) {
-			cfg80211_scan_done(prGlueInfo->prScanRequest, FALSE);
+			kalCfg80211ScanDone(prGlueInfo->prScanRequest, FALSE);
 			prGlueInfo->prScanRequest = NULL;
 		}
 		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
@@ -3779,6 +3779,34 @@ kalIndicateBssInfo(IN P_GLUE_INFO_T prGlueInfo,
 	}
 
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief    abstraction of cfg80211_scan_done
+ * Since linux-4.8.y the 2nd parameter is changed from bool to
+ * struct cfg80211_scan_info, but we don't use all fields yet.
+ *
+ * @request: the corresponding scan request (sanity checked by callers!)
+ * @aborted: set to true if the scan was aborted for any reason,
+ *	userspace will be notified of that
+ *
+ * \return
+ *           none
+ */
+/*----------------------------------------------------------------------------*/
+#if KERNEL_VERSION(4, 8, 0) <= LINUX_VERSION_CODE
+void kalCfg80211ScanDone(struct cfg80211_scan_request *request, bool aborted)
+{
+	struct cfg80211_scan_info info = { .aborted = aborted };
+
+	cfg80211_scan_done(request, &info);
+}
+#else
+void kalCfg80211ScanDone(struct cfg80211_scan_request *request, bool aborted)
+{
+	cfg80211_scan_done(request, aborted);
+}
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!

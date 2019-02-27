@@ -125,7 +125,12 @@
 #include <linux/delay.h>	/* udelay and mdelay macro */
 
 #if CONFIG_ANDROID
+#if (KERNEL_VERSION(4, 9, 0) <= LINUX_VERSION_CODE)
+#include <linux/device.h>
+#include <linux/pm_wakeup.h>
+#else
 #include <linux/wakelock.h>
+#endif
 #endif
 
 #include <linux/irq.h>		/* IRQT_FALLING */

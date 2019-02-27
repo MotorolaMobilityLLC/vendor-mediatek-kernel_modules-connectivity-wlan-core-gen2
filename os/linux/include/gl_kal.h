@@ -173,7 +173,11 @@ enum ENUM_BUILD_VARIANT_E {
 };
 
 #if CONFIG_ANDROID		/* Defined in Android kernel source */
+#if (KERNEL_VERSION(4, 9, 0) <= LINUX_VERSION_CODE)
+typedef struct wakeup_source KAL_WAKE_LOCK_T, *P_KAL_WAKE_LOCK_T;
+#else
 typedef struct wake_lock KAL_WAKE_LOCK_T, *P_KAL_WAKE_LOCK_T;
+#endif
 #else
 typedef UINT_32 KAL_WAKE_LOCK_T, *P_KAL_WAKE_LOCK_T;
 #endif
@@ -253,6 +257,20 @@ struct KAL_HALT_CTRL_T {
 /* Macros of wake_lock operations for using in Driver Layer                   */
 /*----------------------------------------------------------------------------*/
 #if CONFIG_ANDROID		/* Defined in Android kernel source */
+#if (KERNEL_VERSION(4, 9, 0) <= LINUX_VERSION_CODE)
+#define KAL_WAKE_LOCK_INIT(_prAdapter, _prWakeLock, _pcName) \
+	wakeup_source_init(_prWakeLock, _pcName)
+#define KAL_WAKE_LOCK_DESTROY(_prAdapter, _prWakeLock) \
+	wakeup_source_trash(_prWakeLock)
+#define KAL_WAKE_LOCK(_prAdapter, _prWakeLock) \
+	__pm_stay_awake(_prWakeLock)
+#define KAL_WAKE_LOCK_TIMEOUT(_prAdapter, _prWakeLock, _u4Timeout) \
+	__pm_wakeup_event(_prWakeLock, _u4Timeout)
+#define KAL_WAKE_UNLOCK(_prAdapter, _prWakeLock) \
+	__pm_relax(_prWakeLock)
+#define KAL_WAKE_LOCK_ACTIVE(_prAdapter, _prWakeLock) \
+	((_prWakeLock)->active)
+#else
 #define KAL_WAKE_LOCK_INIT(_prAdapter, _prWakeLock, _pcName) \
 	wake_lock_init(_prWakeLock, WAKE_LOCK_SUSPEND, _pcName)
 
@@ -273,6 +291,7 @@ struct KAL_HALT_CTRL_T {
 	typedef struct wake_lock KAL_WAKE_LOCK_T, *P_KAL_WAKE_LOCK_T;
 #define KAL_WAKELOCK_DECLARE(_lock) \
 	struct wake_lock _lock
+#endif
 
 #else
 #define KAL_WAKE_LOCK_INIT(_prAdapter, _prWakeLock, _pcName)
@@ -821,6 +840,8 @@ UINT_32 kalWriteToFile(const PUINT_8 pucPath, BOOLEAN fgDoAppend, PUINT_8 pucDat
 VOID
 kalIndicateBssInfo(IN P_GLUE_INFO_T prGlueInfo,
 		   IN PUINT_8 pucFrameBuf, IN UINT_32 u4BufLen, IN UINT_8 ucChannelNum, IN INT_32 i4SignalStrength);
+
+void kalCfg80211ScanDone(struct cfg80211_scan_request *request, bool aborted);
 
 /*----------------------------------------------------------------------------*/
 /* PNO Support                                                                */
