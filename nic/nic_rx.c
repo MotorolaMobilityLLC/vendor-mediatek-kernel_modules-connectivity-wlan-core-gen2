@@ -2700,7 +2700,7 @@ VOID nicRxReturnRFBwithUninit(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb
 		 * The processing on this RFB is uninitiated, so put it back on the tail of
 		 * our list
 		 */
-		DBGLOG(RX, WARN,
+		DBGLOGLIMITED(RX, WARN,
 			   "wlanReturnPacket nicRxSetupRFB fail!\n");
 		/* insert initialized SwRfb block */
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
