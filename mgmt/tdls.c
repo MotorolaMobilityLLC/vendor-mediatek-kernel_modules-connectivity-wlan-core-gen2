@@ -3041,6 +3041,8 @@ TdlsInfoDisplay(ADAPTER_T *prAdapter, VOID *pvSetBuffer, UINT_32 u4SetBufferLen,
 							 prCmdContent->ucNetTypeIndex, prCmdContent->aucPeerMac);
 			if (prStaRec == NULL)
 				fgIsListAll = TRUE;
+			else
+				fgIsListAll = FALSE;
 		}
 
 		ucNetTypeIndex = prCmdContent->ucNetTypeIndex;
