@@ -2385,9 +2385,18 @@ VOID scanCollectBeaconReport(IN P_ADAPTER_T prAdapter, PUINT_8 pucIEBuf,
 			}
 			if (EQUAL_SSID(&pucIE[2], pucIE[1], &pucSubIE[2], pucSubIE[1]))
 				break;
-			DBGLOG(SCN, TRACE,
-				"SSID mismatch, req(len %d, %s), bcn(id %d, len %d, %s)\n",
-				pucSubIE[1], &pucSubIE[2], pucIE[0], pucIE[1], &pucIE[2]);
+			{
+				UINT_8 aucReqSsid[33] = {0};
+				UINT_8 aucBcnSsid[33] = {0};
+				UINT_8 ucReqSsidLen = pucSubIE[1] <= 32 ? pucSubIE[1] : 32;
+				UINT_8 ucBcnSsidLen = pucIE[1] <= 32 ? pucIE[1] : 32;
+
+				kalMemCopy(aucReqSsid, &pucSubIE[2], ucReqSsidLen);
+				kalMemCopy(aucBcnSsid, &pucIE[2], ucBcnSsidLen);
+				DBGLOG(SCN, TRACE,
+					"SSID mismatch, req(len %u, %s), bcn(id %u, len %u, %s)\n",
+					ucReqSsidLen, aucReqSsid, pucIE[0], ucBcnSsidLen, aucBcnSsid);
+			}
 			return; /* don't match SSID, don't report it */
 		case 1: /* Beacon Reporting Information */
 			ucCondition = pucSubIE[3];
