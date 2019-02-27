@@ -972,6 +972,8 @@ static ssize_t procSetCamCfgWrite(struct file *file, const char *buffer, size_t 
 	aucProcBuf[u4CopySize] = '\0';
 	temp = &aucProcBuf[0];
 	while (temp) {
+		kalMemSet(aucModule, 0, MODULE_NAME_LENGTH);
+
 		/* pick up a string and teminated after meet : */
 		if (sscanf(temp, "%4s %d", aucModule, &u4Enabled) != 2)  {
 			pr_info("read param fail, aucModule=%s\n", aucModule);
