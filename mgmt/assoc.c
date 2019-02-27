@@ -1567,8 +1567,10 @@ WLAN_STATUS assocSendReAssocRespFrame(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_
 	/* TODO(Kevin): Also release the unused tail room of the composed MMPDU */
 
 	/* 4 <6> Enqueue the frame to send this (Re)Association request frame. */
-	DBGLOG(SAA, INFO, "Sending (Re)Assoc Response, network: %d seqNo: %d\n",
-			prMsduInfo->ucNetworkType, prMsduInfo->ucTxSeqNum);
+	DBGLOG(SAA, INFO, "Sending (Re)Assoc Response, network: %d seqNo: %d, status: %d\n",
+			prMsduInfo->ucNetworkType,
+			prMsduInfo->ucTxSeqNum,
+			prStaRec->u2StatusCode);
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 
 	return WLAN_STATUS_SUCCESS;
