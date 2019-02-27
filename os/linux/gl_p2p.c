@@ -3553,14 +3553,12 @@ mtk_p2p_wext_get_struct(IN struct net_device *prDev,
 				PUINT_8 pucChnlList = (PUINT_8) prP2PReq->aucBuffer;
 
 				kalGetChnlList(prGlueInfo, BAND_NULL, ucMaxChannelNum, &NumOfChannel, aucChannelList);
-				if (NumOfChannel > 50)
-					NumOfChannel = 50;
-				prP2PReq->outBufferLength = NumOfChannel;
 				/* here must confirm NumOfChannel < 16, for prP2PReq->aucBuffer 16 byte */
-				if (NumOfChannel >= 15) {
+				if (NumOfChannel > 15) {
 					/* DBGLOG(P2P, ERROR, "channel num > 15\n", __func__); */
-					ASSERT(FALSE);
+					NumOfChannel = 15;
 				}
+				prP2PReq->outBufferLength = NumOfChannel;
 
 				for (i = 0; i < NumOfChannel; i++) {
 #if 0

@@ -162,6 +162,7 @@ void p2pHandleSystemSuspend(void)
 			u4Len += OFFSET_OF(PARAM_NETWORK_ADDRESS, aucAddress) + sizeof(PARAM_NETWORK_ADDRESS_IP);
 #endif
 		}
+#if 0
 #ifdef CONFIG_IPV6
 		for (i = 0; i < u4NumIPv6; i++) {
 			prParamNetAddr->u2AddressLength = 6;
@@ -176,6 +177,7 @@ void p2pHandleSystemSuspend(void)
 
 			u4Len += OFFSET_OF(PARAM_NETWORK_ADDRESS, aucAddress) + sizeof(ip6);
 		}
+#endif
 #endif
 		ASSERT(u4Len <= sizeof(g_aucBufIpAddr /*aucBuf */));
 
