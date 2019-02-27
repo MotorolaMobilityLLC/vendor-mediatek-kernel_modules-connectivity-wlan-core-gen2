@@ -2578,9 +2578,6 @@ static WLAN_STATUS __scanProcessBeaconAndProbeResp(IN P_ADAPTER_T prAdapter, IN 
 			prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen);
 		/* dumpMemory8(prSwRfb->pvHeader, prSwRfb->u2PacketLen); */
 
-#ifndef _lint
-		ASSERT(0);
-#endif /* _lint */
 		DBGLOG(SCN, ERROR, "Ignore invalid Beacon Frame\n");
 		return rStatus;
 	}
