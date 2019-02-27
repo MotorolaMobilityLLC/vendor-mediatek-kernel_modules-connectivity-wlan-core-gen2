@@ -2993,7 +2993,7 @@ nicRxWaitResponse(IN P_ADAPTER_T prAdapter,
 		if (u4PktLen == 0) {
 			/* timeout exceeding check */
 			rCurTime = ktime_get();
-			if (ktime_ms_delta(rCurTime, rStartTime) >
+			if (ktime_to_ms(ktime_sub(rCurTime, rStartTime)) >
 			    RX_RESPONSE_TIMEOUT) {
 				DBGLOG(RX, ERROR,
 				       "RX_RESPONSE_TIMEOUT %u %d %ld %ld\n",
