@@ -3451,11 +3451,16 @@ wlanoidRssiMonitor(IN P_ADAPTER_T prAdapter, OUT PVOID pvQueryBuffer,
 	DBGLOG(OID, INFO, "enable=%d, max_rssi_value=%d, min_rssi_value=%d\n",
 		rRssi.enable, rRssi.max_rssi_value, rRssi.min_rssi_value);
 
+	/*
+	 * If status == WLAN_STATUS_ADAPTER_NOT_READY
+	 * driver needs to info FW to stop mointor but set oid flag to false
+	 * to prevent from multiple complete
+	 */
 	rStatus2 = wlanSendSetQueryCmd(prAdapter,
 			   CMD_ID_RSSI_MONITOR,
 			   TRUE,
 			   FALSE,
-			   TRUE,
+			   (rStatus1 != WLAN_STATUS_ADAPTER_NOT_READY),
 			   nicCmdEventSetCommon,
 			   nicOidCmdTimeoutCommon,
 			   sizeof(PARAM_RSSI_MONITOR_T),
