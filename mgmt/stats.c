@@ -1116,7 +1116,7 @@ static VOID statsParsePktInfo(PUINT_8 pucPkt, UINT_8 status, UINT_8 eventType, P
 				if (srLastArpTxDoneReqTime &&
 					kalGetTimeTick() - srLastArpTxDoneReqTime
 						< ARP_TX_DONE_REQ_INTERVAL) {
-					DBGLOG(TX, INFO,
+					DBGLOGLIMITED(TX, INFO,
 					"<TX> Skip Tx done status for Arp Req to IP: %d.%d.%d.%d\n",
 					pucEthBody[24], pucEthBody[25], pucEthBody[26], pucEthBody[27]);
 					break;
