@@ -788,6 +788,10 @@ int mtk_cfg80211_vendor_event_rssi_beyond_range(struct wiphy *wiphy, struct wire
 int mtk_cfg80211_vendor_set_band(struct wiphy *wiphy, struct wireless_dev *wdev,
 					const void *data, int data_len);
 
+int mtk_cfg80211_vendor_set_scan_mac_oui(struct wiphy *wiphy,
+				struct wireless_dev *wdev,
+				const void *data, int data_len);
+
 int mtk_cfg80211_vendor_set_roaming_policy(struct wiphy *wiphy, struct wireless_dev *wdev,
 					const void *data, int data_len);
 
