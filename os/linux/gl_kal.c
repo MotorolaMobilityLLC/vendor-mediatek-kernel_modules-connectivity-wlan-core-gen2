@@ -975,7 +975,11 @@ WLAN_STATUS kalRxIndicatePkts(IN P_GLUE_INFO_T prGlueInfo, IN PVOID apvPkts[], I
 
 		STATS_RX_PKT_INFO_DISPLAY(prSkb->data);
 
+#if KERNEL_VERSION(4, 11, 0) <= CFG80211_VERSION_CODE
+	/* ToDo jiffies assignment */
+#else
 		prNetDev->last_rx = jiffies;
+#endif
 		prSkb->protocol = eth_type_trans(prSkb, prNetDev);
 		prSkb->dev = prNetDev;
 		/* DBGLOG_MEM32(RX, TRACE, (PUINT_32)prSkb->data, prSkb->len); */
@@ -1041,6 +1045,10 @@ kalIndicateStatusAndComplete(IN P_GLUE_INFO_T prGlueInfo, IN WLAN_STATUS eStatus
 	UINT_16 u2StatusCode = WLAN_STATUS_AUTH_TIMEOUT;
 	OS_SYSTIME rCurrentTime;
 	BOOLEAN fgIsNeedUpdateBss = FALSE;
+
+#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
+	struct cfg80211_roam_info rRoamInfo = { 0 };
+#endif
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -1174,11 +1182,24 @@ kalIndicateStatusAndComplete(IN P_GLUE_INFO_T prGlueInfo, IN WLAN_STATUS eStatus
 
 			/* CFG80211 Indication */
 			if (eStatus == WLAN_STATUS_ROAM_OUT_FIND_BEST) {
+#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
+				rRoamInfo.bss = bss;
+				rRoamInfo.req_ie = prGlueInfo->aucReqIe;
+				rRoamInfo.req_ie_len =
+					prGlueInfo->u4ReqIeLength;
+				rRoamInfo.resp_ie = prGlueInfo->aucRspIe;
+				rRoamInfo.resp_ie_len =
+					prGlueInfo->u4RspIeLength;
+
+				cfg80211_roamed(prGlueInfo->prDevHandler,
+					&rRoamInfo, GFP_KERNEL);
+#else
 				cfg80211_roamed_bss(prGlueInfo->prDevHandler,
 						    bss,
 						    prGlueInfo->aucReqIe,
 						    prGlueInfo->u4ReqIeLength,
 						    prGlueInfo->aucRspIe, prGlueInfo->u4RspIeLength, GFP_KERNEL);
+#endif
 			} else {
 				/*
 				 * to support user space roaming, cfg80211 will change the sme_state to connecting
@@ -3668,9 +3689,11 @@ UINT_32 kalFileRead(struct file *file, UINT_64 offset, UINT_8 *data, UINT_32 siz
 
 	oldfs = get_fs();
 	set_fs(get_ds());
-
+#if KERNEL_VERSION(4, 13, 0) <= CFG80211_VERSION_CODE
+	ret = kernel_read(file, data, size, &offset);
+#else
 	ret = vfs_read(file, data, size, &offset);
-
+#endif
 	set_fs(oldfs);
 	return ret;
 }
@@ -3682,8 +3705,11 @@ UINT_32 kalFileWrite(struct file *file, UINT_64 offset, UINT_8 *data, UINT_32 si
 
 	oldfs = get_fs();
 	set_fs(get_ds());
-
+#if KERNEL_VERSION(4, 13, 0) <= CFG80211_VERSION_CODE
+	ret = kernel_write(file, data, size, &offset);
+#else
 	ret = vfs_write(file, data, size, &offset);
+#endif
 
 	set_fs(oldfs);
 	return ret;
@@ -4290,9 +4316,11 @@ UINT_64 kalGetBootTime(void)
 VOID kalSchedScanResults(IN P_GLUE_INFO_T prGlueInfo)
 {
 	ASSERT(prGlueInfo);
-
+#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
+	cfg80211_sched_scan_results(priv_to_wiphy(prGlueInfo), 0);
+#else
 	cfg80211_sched_scan_results(priv_to_wiphy(prGlueInfo));
-
+#endif
 }
 
 /*----------------------------------------------------------------------------*/

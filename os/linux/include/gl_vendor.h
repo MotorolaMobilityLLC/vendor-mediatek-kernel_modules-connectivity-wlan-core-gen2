@@ -326,6 +326,18 @@ typedef enum {
 #define MAX_FW_ROAMING_BLACKLIST_SIZE	16
 #define MAX_FW_ROAMING_WHITELIST_SIZE	8
 
+#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
+#define NLA_PARSE_NESTED(nlattr, maxtype, nla, policy)	\
+	nla_parse_nested(nlattr, maxtype, nla, policy, NULL)
+#define NLA_PARSE(tb, maxtype, head, len, policy) \
+	nla_parse(tb, maxtype, head, len, policy, NULL)
+#else
+#define NLA_PARSE_NESTED(nlattr, maxtype, nla, policy)	\
+	nla_parse_nested(nlattr, maxtype, nla, policy)
+#define NLA_PARSE(tb, maxtype, head, len, policy) \
+	nla_parse(tb, maxtype, head, len, policy)
+#endif
+
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************

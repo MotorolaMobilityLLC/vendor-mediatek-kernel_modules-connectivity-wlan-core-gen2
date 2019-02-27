@@ -36,6 +36,10 @@
 #include "nic/bow.h"
 #endif
 
+#if KERNEL_VERSION(4, 11, 0) <= CFG80211_VERSION_CODE
+#include "linux/sched/types.h"
+#endif
+
 #if DBG
 extern int allocatedMemSize;
 #endif

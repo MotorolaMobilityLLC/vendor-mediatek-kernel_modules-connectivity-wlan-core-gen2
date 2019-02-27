@@ -84,9 +84,14 @@ static UINT_8 gucKeyIndex = 255;
  *         others:  failure
  */
 /*----------------------------------------------------------------------------*/
+#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
+mtk_cfg80211_change_iface(struct wiphy *wiphy,
+			  struct net_device *ndev, enum nl80211_iftype type, struct vif_params *params)
+#else
 int
 mtk_cfg80211_change_iface(struct wiphy *wiphy,
 			  struct net_device *ndev, enum nl80211_iftype type, u32 *flags, struct vif_params *params)
+#endif
 {
 	P_GLUE_INFO_T prGlueInfo = NULL;
 	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
@@ -2115,7 +2120,13 @@ mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
 	return 0;
 }
 
+#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
+int mtk_cfg80211_sched_scan_stop(IN struct wiphy *wiphy,
+				 IN struct net_device *ndev,
+				 IN u64 reqid)
+#else
 int mtk_cfg80211_sched_scan_stop(IN struct wiphy *wiphy, IN struct net_device *ndev)
+#endif
 {
 	P_GLUE_INFO_T prGlueInfo = NULL;
 	WLAN_STATUS rStatus;
