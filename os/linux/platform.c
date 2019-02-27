@@ -554,7 +554,7 @@ BOOLEAN kalCfgDataRead(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Offset,
 	if (pu2Data == NULL)
 		return FALSE;
 
-	if (u4Offset + u4Len >= CFG_FILE_WIFI_REC_SIZE)
+	if (u4Offset + u4Len > CFG_FILE_WIFI_REC_SIZE)
 		return FALSE;
 
 	kalMemCopy(pu2Data, &g_aucNvram[u4Offset], u4Len);
@@ -588,7 +588,7 @@ BOOLEAN kalCfgDataRead16(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Offset, OUT P
 	if (pu2Data == NULL)
 		return FALSE;
 
-	if (u4Offset + sizeof(unsigned short) >= CFG_FILE_WIFI_REC_SIZE)
+	if (u4Offset + sizeof(unsigned short) > CFG_FILE_WIFI_REC_SIZE)
 		return FALSE;
 
 	kalMemCopy(pu2Data, &g_aucNvram[u4Offset], sizeof(unsigned short));
@@ -618,7 +618,7 @@ BOOLEAN kalCfgDataRead16(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Offset, OUT P
 /*----------------------------------------------------------------------------*/
 BOOLEAN kalCfgDataWrite16(IN P_GLUE_INFO_T prGlueInfo, UINT_32 u4Offset, UINT_16 u2Data)
 {
-	if (u4Offset + sizeof(unsigned short) >= CFG_FILE_WIFI_REC_SIZE)
+	if (u4Offset + sizeof(unsigned short) > CFG_FILE_WIFI_REC_SIZE)
 		return FALSE;
 
 	kalMemCopy(&g_aucNvram[u4Offset], &u2Data, sizeof(unsigned short));
