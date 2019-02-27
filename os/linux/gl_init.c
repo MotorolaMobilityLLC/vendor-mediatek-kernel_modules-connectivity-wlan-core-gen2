@@ -1903,7 +1903,6 @@ static INT_32 wlanNetRegister(struct wireless_dev *prWdev)
 static int wlanSetMacAddress(struct net_device *ndev, void *addr)
 {
 	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_BSS_INFO_T prAisBssInfo = NULL;
 	struct sockaddr *sa = NULL;
 	UINT_8 aucMacAddr[MAC_ADDR_LEN];
 	WLAN_STATUS rStatus;
@@ -2749,10 +2748,10 @@ static uint32_t u4LogOnOffCache = -1;
 static void consys_log_event_notification(int cmd, int value)
 {
 	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_ADAPTER_T *prAdapter = NULL;
+	P_ADAPTER_T prAdapter = NULL;
 	struct net_device *prDev = gPrDev;
-	WLAN_STATUS rStatus = WLAN_STATUS_FAILURE;
 #if 0 /* gen2? */
+	WLAN_STATUS rStatus = WLAN_STATUS_FAILURE;
 	struct _CMD_HEADER_T rCmdV1Header;
 	struct _CMD_FORMAT_V1_T rCmd_v1;
 #endif
@@ -2788,9 +2787,9 @@ static void consys_log_event_notification(int cmd, int value)
 	}
 
 	if (cmd == FW_LOG_CMD_ON_OFF) {
-
+#if 0 /* gen2? */
 		uint8_t onoff[1] = {'0'};
-
+#endif
 		DBGLOG(INIT, TRACE, "FW_LOG_CMD_ON_OFF\n");
 #if 0 /* gen2? */
 		rCmdV1Header.cmdType = CMD_TYPE_SET;

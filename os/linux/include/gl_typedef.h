@@ -57,11 +57,6 @@
 */
 /* Type definition for void */
 /*mach/mt_typedefs.h define _TYPEDEFS_H, to avoid compile error*/
-#ifndef _TYPEDEFS_H
-typedef void VOID;
-#endif
-typedef void *PVOID, **PPVOID;
-
 /* Type definition for Boolean */
 typedef unsigned char BOOLEAN, *PBOOLEAN;
 
@@ -70,16 +65,13 @@ typedef signed char CHAR, *PCHAR, **PPCHAR;
 typedef signed char INT_8, *PINT_8, **PPINT_8;
 typedef signed short INT_16, *PINT_16, **PPINT_16;
 typedef signed int INT_32, *PINT_32, **PPINT_32;
-typedef long LONG, *PLONG, **PPLONG;
 typedef signed long long INT_64, *PINT_64, **PPINT_64;
 
 /* Type definition for unsigned integers */
 typedef unsigned char UCHAR, *PUCHAR, **PPUCHAR;
 typedef unsigned char UINT_8, *PUINT_8, **PPUINT_8, *P_UINT_8;
 typedef unsigned short UINT_16, *PUINT_16, **PPUINT_16;
-typedef unsigned int UINT32, *PUINT32;
 typedef unsigned int UINT_32, *PUINT_32, **PPUINT_32;
-typedef unsigned long ULONG, *PULONG, **PPULONG;
 typedef unsigned long long UINT_64, *PUINT_64, **PPUINT_64;
 
 typedef unsigned int OS_SYSTIME, *POS_SYSTIME, **PPOS_SYSTIME;

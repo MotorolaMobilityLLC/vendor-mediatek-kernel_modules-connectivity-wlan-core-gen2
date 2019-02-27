@@ -54,15 +54,6 @@ typedef struct _RESET_STRUCT_T {
 	struct work_struct rst_trigger_work;
 	UINT_32 rst_trigger_flag;
 } RESET_STRUCT_T;
-
-typedef void (*PF_WMT_CB) (ENUM_WMTDRV_TYPE_T,	/* Source driver type */
-	ENUM_WMTDRV_TYPE_T,	/* Destination driver type */
-	ENUM_WMTMSG_TYPE_T,	/* Message type */
-	void *,	/* READ-ONLY buffer. Buffer is allocated and freed by WMT_drv. Client
-	can't touch this buffer after this function return. */
-	unsigned int	/* Buffer size in unit of byte */
-);
-
 /*******************************************************************************
 *                    E X T E R N A L   F U N C T I O N S
 ********************************************************************************
