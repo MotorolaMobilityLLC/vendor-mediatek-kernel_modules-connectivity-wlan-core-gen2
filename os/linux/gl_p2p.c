@@ -398,7 +398,7 @@ static UINT_16 p2pSelectQueue(struct net_device *dev, struct sk_buff *skb,
 	return au16Wlan1dToQueueIdx[skb->priority];
 }
 
-static struct net_device *g_P2pPrDev;
+struct net_device *g_P2pPrDev;
 static struct wireless_dev *gprP2pWdev;
 
 /*----------------------------------------------------------------------------*/
