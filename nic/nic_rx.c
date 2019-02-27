@@ -30,6 +30,8 @@
 #include "debug.h"
 #include "wlan_lib.h"
 #include "gl_wext.h"
+
+#include <linux/ktime.h>
 #include <linux/can/netlink.h>
 #include <net/netlink.h>
 #include <net/cfg80211.h>
@@ -2962,7 +2964,7 @@ nicRxWaitResponse(IN P_ADAPTER_T prAdapter,
 	UINT_32 i = 0;
 	WLAN_STATUS u4Status = WLAN_STATUS_SUCCESS;
 	BOOLEAN fgResult = TRUE;
-	UINT_32 u4Time, u4Current;
+	ktime_t rStartTime, rCurTime;
 
 	DEBUGFUNC("nicRxWaitResponse");
 
@@ -2970,7 +2972,7 @@ nicRxWaitResponse(IN P_ADAPTER_T prAdapter,
 	ASSERT(pucRspBuffer);
 	ASSERT(ucPortIdx < 2);
 
-	u4Time = kalGetTimeTick();
+	rStartTime = ktime_get();
 
 	do {
 		/* Read the packet length */
@@ -2990,13 +2992,12 @@ nicRxWaitResponse(IN P_ADAPTER_T prAdapter,
 
 		if (u4PktLen == 0) {
 			/* timeout exceeding check */
-			u4Current = kalGetTimeTick();
-
-			if ((u4Current > u4Time) && ((u4Current - u4Time) > RX_RESPONSE_TIMEOUT)) {
-				DBGLOG(RX, ERROR, "RX_RESPONSE_TIMEOUT1 %u %d %u\n", u4PktLen, i, u4Current);
-				return WLAN_STATUS_FAILURE;
-			} else if (u4Current < u4Time && ((u4Current + (0xFFFFFFFF - u4Time)) > RX_RESPONSE_TIMEOUT)) {
-				DBGLOG(RX, ERROR, "RX_RESPONSE_TIMEOUT2 %u %d %u\n", u4PktLen, i, u4Current);
+			rCurTime = ktime_get();
+			if (ktime_ms_delta(rCurTime, rStartTime) >
+			    RX_RESPONSE_TIMEOUT) {
+				DBGLOG(RX, ERROR,
+				       "RX_RESPONSE_TIMEOUT %u %d %ld %ld\n",
+				       u4PktLen, i, rStartTime, rCurTime);
 				return WLAN_STATUS_FAILURE;
 			}
 
