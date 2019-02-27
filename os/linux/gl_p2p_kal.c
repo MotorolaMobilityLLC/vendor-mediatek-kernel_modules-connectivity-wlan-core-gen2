@@ -1582,8 +1582,10 @@ VOID kalP2pUnlinkBss(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 aucBSSID[])
 			WLAN_CAPABILITY_ESS);
 #endif
 
-	if (bss != NULL)
+	if (bss != NULL) {
 		cfg80211_unlink_bss(prGlueP2pInfo->prWdev->wiphy, bss);
+		cfg80211_put_bss(prGlueP2pInfo->prWdev->wiphy, bss);
+	}
 
 	if (scanSearchBssDescByBssidAndSsid(prGlueInfo->prAdapter,
 			aucBSSID, FALSE, NULL) != NULL)
