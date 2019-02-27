@@ -4824,7 +4824,7 @@ static int priv_driver_get_wifi_type(IN struct net_device *prNetDev,
 				     IN char *pcCommand, IN int i4TotalLen)
 {
 	struct PARAM_GET_WIFI_TYPE rParamGetWifiType;
-	struct GLUE_INFO *prGlueInfo = NULL;
+	P_GLUE_INFO_T prGlueInfo = NULL;
 	uint32_t rStatus;
 	uint32_t u4BytesWritten = 0;
 
@@ -4834,7 +4834,7 @@ static int priv_driver_get_wifi_type(IN struct net_device *prNetDev,
 		return -1;
 	}
 
-	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
 
 	rParamGetWifiType.prNetDev = prNetDev;
 
