@@ -871,6 +871,7 @@ VOID rlmDomainGetChnlList(P_ADAPTER_T prAdapter,
 				paucChannelList[ucNum].eBand = prSubband->ucBand;
 				paucChannelList[ucNum].ucChannelNum =
 				    prSubband->ucFirstChannelNum + j * prSubband->ucChannelSpan;
+				paucChannelList[ucNum].eDFS = prSubband->fgDfs;
 				ucNum++;
 			}
 		}
