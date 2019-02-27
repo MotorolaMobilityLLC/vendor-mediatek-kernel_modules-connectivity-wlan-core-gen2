@@ -989,6 +989,8 @@ VOID p2pFsmRunEventStartAP(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 	P_MSG_P2P_START_AP_T prP2pStartAPMsg = (P_MSG_P2P_START_AP_T) NULL;
 	P_P2P_SPECIFIC_BSS_INFO_T prP2pSpecificBssInfo = (P_P2P_SPECIFIC_BSS_INFO_T) NULL;
 	P_P2P_CONNECTION_REQ_INFO_T prConnReqInfo = (P_P2P_CONNECTION_REQ_INFO_T) NULL;
+	P_P2P_CHNL_REQ_INFO_T prChnlReqInfo;
+	P_P2P_SCAN_REQ_INFO_T prScanReqInfo;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL));
@@ -1080,8 +1082,8 @@ VOID p2pFsmRunEventStartAP(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 				/* Sparse channel detection using passive mode. */
 				eNextState = P2P_STATE_AP_CHANNEL_DETECT;
 			} else {
-				P_P2P_CHNL_REQ_INFO_T prChnlReqInfo = &prP2pFsmInfo->rChnlReqInfo;
-				P_P2P_SCAN_REQ_INFO_T prScanReqInfo = &(prP2pFsmInfo->rScanReqInfo);
+				prChnlReqInfo = &prP2pFsmInfo->rChnlReqInfo;
+				prScanReqInfo = &(prP2pFsmInfo->rScanReqInfo);
 
 #if 1
 				/* 2012-01-27: frog - Channel set from upper layer is the first priority. */
