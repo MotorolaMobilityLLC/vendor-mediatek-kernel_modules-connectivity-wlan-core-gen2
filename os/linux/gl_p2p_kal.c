@@ -1031,19 +1031,25 @@ kalP2PIndicateBssInfo(IN P_GLUE_INFO_T prGlueInfo,
 		}
 		/* rChannelInfo.center_freq = nicChannelNum2Freq((UINT_32)prChannelInfo->ucChannelNum) / 1000; */
 
-		prCfg80211Bss = cfg80211_inform_bss_frame(prGlueP2pInfo->prWdev->wiphy,	/* struct wiphy * wiphy, */
-							  prChannelEntry,
-							  prBcnProbeRspFrame, u4BufLen, i4SignalStrength, GFP_KERNEL);
+		if (u4BufLen > 0) {
+			prCfg80211Bss = cfg80211_inform_bss_frame(
+				/* struct wiphy * wiphy, */
+				prGlueP2pInfo->prWdev->wiphy,
+				prChannelEntry,
+				prBcnProbeRspFrame,
+				u4BufLen, i4SignalStrength, GFP_KERNEL);
+		}
 
 		/* Return this structure. */
 		if (!prCfg80211Bss) {
-			DBGLOG(P2P, WARN, "inform bss[%pM]: to cfg80211 failed, bss channel %d, rcpi %d\n",
-					prBcnProbeRspFrame->bssid,
-					prChannelInfo->ucChannelNum, i4SignalStrength);
+			DBGLOG(P2P, WARN,
+				"inform bss[%pM]: to cfg80211 failed, bss channel %d, rcpi %d, len %d\n",
+				prBcnProbeRspFrame->bssid,
+				prChannelInfo->ucChannelNum, i4SignalStrength, u4BufLen);
 		} else {
 			cfg80211_put_bss(prGlueP2pInfo->prWdev->wiphy, prCfg80211Bss);
 			DBGLOG(P2P, TRACE, "inform bss to cfg80211, bss channel %d, rcpi %d\n",
-					prChannelInfo->ucChannelNum, i4SignalStrength);
+				prChannelInfo->ucChannelNum, i4SignalStrength);
 		}
 	} while (FALSE);
 
