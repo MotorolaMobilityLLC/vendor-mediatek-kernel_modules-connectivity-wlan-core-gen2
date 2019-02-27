@@ -304,6 +304,17 @@ int mtk_cfg80211_vendor_set_country_code(struct wiphy *wiphy, struct wireless_de
 	return 0;
 }
 
+int mtk_cfg80211_vendor_set_scan_mac_oui(struct wiphy *wiphy,
+	struct wireless_dev *wdev, const void *data, int data_len)
+{
+	ASSERT(wiphy);
+	ASSERT(wdev);
+
+	DBGLOG(REQ, INFO, "scan mac oui not supported\n");
+
+	return 0;
+}
+
 int mtk_cfg80211_vendor_get_roaming_capabilities(struct wiphy *wiphy,
 	struct wireless_dev *wdev, const void *data, int data_len)
 {
