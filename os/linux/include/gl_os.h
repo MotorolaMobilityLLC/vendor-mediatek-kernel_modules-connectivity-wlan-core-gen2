@@ -215,6 +215,7 @@
 extern BOOLEAN fgIsBusAccessFailed;
 extern const struct ieee80211_iface_combination *p_mtk_sta_iface_combos;
 extern const INT_32 mtk_sta_iface_combos_num;
+extern UINT_8 g_aucNvram[];
 
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 typedef void (*wifi_fwlog_event_func_cb)(int, int);
@@ -301,6 +302,13 @@ typedef enum _ENUM_NET_REG_STATE_T {
 	ENUM_NET_REG_STATE_UNREGISTERING,
 	ENUM_NET_REG_STATE_NUM
 } ENUM_NET_REG_STATE_T;
+
+enum ENUM_WLAN_DRV_BUF_TYPE_T {
+	ENUM_BUF_TYPE_NVRAM,
+	ENUM_BUF_TYPE_DRV_CFG,
+	ENUM_BUF_TYPE_FW_CFG,
+	ENUM_BUF_TYPE_NUM
+};
 
 #endif
 
@@ -953,9 +961,12 @@ VOID wlanUpdateChannelTable(P_GLUE_INFO_T prGlueInfo);
 INT_32 cfgCreateProcEntry(P_GLUE_INFO_T prGlueInfo);
 INT_32 cfgRemoveProcEntry(void);
 #endif
+
+typedef UINT_8 (*file_buf_handler) (PVOID ctx, const CHAR __user *buf, UINT_16 length);
+extern VOID register_file_buf_handler(file_buf_handler handler, PVOID ctx, UINT_8 ucType);
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
 */
-
 #endif /* _GL_OS_H */
