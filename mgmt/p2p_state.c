@@ -82,15 +82,27 @@ VOID p2pStateInit_CHNL_ON_HAND(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prP2pBs
 
 		DBGLOG(P2P, TRACE, "start a channel on hand timer.\n");
 		if (prP2pFsmInfo->eListenExted != P2P_DEV_EXT_LISTEN_ING) {
-			cnmTimerStartTimer(prAdapter, &(prAdapter->rP2pFsmTimeoutTimer),
-				prChnlReqInfo->u4MaxInterval);
+			UINT_32 u4TimeoutMs = 0;
 
-			kalP2PIndicateChannelReady(prAdapter->prGlueInfo,
-				   prChnlReqInfo->u8Cookie,
-				   prChnlReqInfo->ucReqChnlNum,
-				   prChnlReqInfo->eBand, prChnlReqInfo->eChnlSco, prChnlReqInfo->u4MaxInterval);
-			/* Complete channel request */
-			complete(&prAdapter->prGlueInfo->rP2pReq);
+			if (prP2pFsmInfo->fgIsChannelExtended)
+				u4TimeoutMs = P2P_CHNL_EXTEND_CHAN_TIME;
+			else
+				u4TimeoutMs = prChnlReqInfo->u4MaxInterval;
+			DBGLOG(P2P, INFO, "Channel on hand timer: %d.\n", u4TimeoutMs);
+
+			cnmTimerStartTimer(prAdapter, &(prAdapter->rP2pFsmTimeoutTimer),
+				u4TimeoutMs);
+
+			if (prP2pFsmInfo->fgIsChannelExtended == FALSE) {
+				kalP2PIndicateChannelReady(prAdapter->prGlueInfo,
+						prChnlReqInfo->u8Cookie,
+						prChnlReqInfo->ucReqChnlNum,
+						prChnlReqInfo->eBand,
+						prChnlReqInfo->eChnlSco,
+						prChnlReqInfo->u4MaxInterval);
+				/* Complete channel request */
+				complete(&prAdapter->prGlueInfo->rP2pReq);
+			}
 		} else
 			cnmTimerStartTimer(prAdapter, &(prAdapter->rP2pFsmTimeoutTimer),
 				(P2P_EXT_LISTEN_TIME_MS - prChnlReqInfo->u4MaxInterval));
@@ -108,7 +120,8 @@ p2pStateAbort_CHNL_ON_HAND(IN P_ADAPTER_T prAdapter,
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prP2pFsmInfo != NULL));
 		if (prP2pFsmInfo->eListenExted != P2P_DEV_EXT_LISTEN_ING &&
-			eNextState == P2P_STATE_CHNL_ON_HAND)
+				!prP2pFsmInfo->fgIsChannelExtended &&
+				eNextState == P2P_STATE_CHNL_ON_HAND)
 			WARN_ON(1);
 
 		prChnlReqInfo = &(prP2pFsmInfo->rChnlReqInfo);
@@ -122,7 +135,7 @@ p2pStateAbort_CHNL_ON_HAND(IN P_ADAPTER_T prAdapter,
 
 		DBGLOG(P2P, INFO, "p2p state trans abort chann on hand, eListenExted: %d, eNextState: %d\n",
 			prP2pFsmInfo->eListenExted, eNextState);
-		if (prP2pFsmInfo->eListenExted != P2P_DEV_EXT_LISTEN_ING ||
+		if (prP2pFsmInfo->eListenExted != P2P_DEV_EXT_LISTEN_ING &&
 			eNextState != P2P_STATE_CHNL_ON_HAND) {
 			/*
 			 * Here maybe have a bug, when it's extlistening, a new remain_on_channel
