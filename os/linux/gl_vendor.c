@@ -99,7 +99,8 @@
 			      (WIFI_FEATURE_GSCAN) |\
 			      (WIFI_FEATURE_TDLS) |\
 			      (WIFI_FEATURE_RSSI_MONITOR) |\
-			      (WIFI_FEATURE_CONTROL_ROAMING)\
+			      (WIFI_FEATURE_CONTROL_ROAMING) |\
+			      (WIFI_FEATURE_SET_TX_POWER_LIMIT)\
 			      )
 
 /*******************************************************************************
@@ -1955,6 +1956,66 @@ int mtk_cfg80211_vendor_get_supported_feature_set(struct wiphy *wiphy,
 	return cfg80211_vendor_cmd_reply(skb);
 
 nla_put_failure:
+	kfree_skb(skb);
+	return -EFAULT;
+}
+
+int mtk_cfg80211_vendor_set_tx_power_scenario(struct wiphy *wiphy,
+		struct wireless_dev *wdev, const void *data, int data_len)
+{
+	P_GLUE_INFO_T prGlueInfo;
+	struct PARAM_TX_POWER_LIMIT rTxPwrLimit;
+	struct nlattr *attr;
+	uint32_t u4Scenario;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	struct sk_buff *skb;
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+	if (wdev->iftype == NL80211_IFTYPE_AP)
+		prGlueInfo = *((P_GLUE_INFO_T *) wiphy_priv(wiphy));
+	else
+		prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+	if (!prGlueInfo)
+		return -EFAULT;
+
+	attr = (struct nlattr *)data;
+	if (attr->nla_type == WIFI_ATTRIBUTE_TX_POWER_SCENARIO)
+		u4Scenario = nla_get_u32(attr);
+	else
+		return -EINVAL;
+
+	kalMemZero(&rTxPwrLimit, sizeof(struct PARAM_TX_POWER_LIMIT));
+	rTxPwrLimit.iScenario = (u4Scenario == UINT_MAX) ?
+				-1 : (int32_t)u4Scenario;
+
+	DBGLOG(REQ, INFO,
+		"iScenario=%d, u4Scenario=%u, UINT_MAX=%u, iftype=%d\n",
+		rTxPwrLimit.iScenario, u4Scenario, UINT_MAX,
+		wdev->iftype);
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetTxPowerLimit,
+			   (PVOID)&rTxPwrLimit,
+			   sizeof(struct PARAM_TX_POWER_LIMIT),
+			   FALSE, FALSE, TRUE, FALSE, NULL);
+
+	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, sizeof(rStatus));
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+		return -ENOMEM;
+	}
+
+	if (unlikely(
+	    nla_put_nohdr(skb, sizeof(rStatus), &rStatus) < 0)) {
+		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
+		goto errHandleLabel;
+	}
+
+	DBGLOG(REQ, INFO, "rStatus=0x%x\n", rStatus);
+
+	return cfg80211_vendor_cmd_reply(skb);
+
+errHandleLabel:
 	kfree_skb(skb);
 	return -EFAULT;
 }
