@@ -82,6 +82,9 @@ static const struct iw_priv_args rIwPrivTable[] = {
 	{IOCTL_SET_STRUCT, 256, 0, ""},
 	{IOCTL_GET_STRUCT, 0, 256, ""},
 
+	{IOCTL_GET_DRIVER, IW_PRIV_TYPE_CHAR | 2000, IW_PRIV_TYPE_CHAR |
+		2000, "driver"},
+
 	/* sub-ioctl definitions */
 #if 0
 	{PRIV_CMD_REG_DOMAIN, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0, "set_reg_domain"},
@@ -159,6 +162,7 @@ static const iw_handler rIwPrivHandler[] = {
 	[IOCTL_GET_INTS - SIOCIWFIRSTPRIV] = priv_get_ints,
 	[IOCTL_SET_STRING - SIOCIWFIRSTPRIV] = priv_set_string,
 	[IOCTL_GET_STRING - SIOCIWFIRSTPRIV] = priv_get_string,
+	[IOCTL_GET_DRIVER - SIOCIWFIRSTPRIV] = priv_set_driver,
 };
 
 const struct iw_handler_def wext_handler_def = {

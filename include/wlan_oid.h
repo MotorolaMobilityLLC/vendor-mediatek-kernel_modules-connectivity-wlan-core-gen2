@@ -1050,6 +1050,11 @@ struct PARAM_WIFI_LOG_LEVEL {
 	UINT_32 u4Level;
 };
 
+struct PARAM_GET_WIFI_TYPE {
+	struct net_device *prNetDev;
+	uint8_t arWifiTypeName[8];
+};
+
 enum ENUM_WIFI_LOG_LEVEL_VERSION_T {
 	ENUM_WIFI_LOG_LEVEL_VERSION_V1 = 1,
 	ENUM_WIFI_LOG_LEVEL_VERSION_NUM
@@ -1975,3 +1980,8 @@ WLAN_STATUS
 wlanoidSetRandomMac(IN P_ADAPTER_T prAdapter,
 		  IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen, OUT PUINT_32 pu4SetInfoLen);
 
+WLAN_STATUS
+wlanoidGetWifiType(IN P_ADAPTER_T prAdapter,
+		   IN void *pvSetBuffer,
+		   IN uint32_t u4SetBufferLen,
+		   OUT uint32_t *pu4SetInfoLen);
