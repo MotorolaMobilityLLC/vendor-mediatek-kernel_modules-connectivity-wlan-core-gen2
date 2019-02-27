@@ -1080,8 +1080,6 @@ VOID p2pFsmRunEventStartAP(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 				/* Sparse channel detection using passive mode. */
 				eNextState = P2P_STATE_AP_CHANNEL_DETECT;
 			} else {
-				P_P2P_SPECIFIC_BSS_INFO_T prP2pSpecificBssInfo =
-				    prAdapter->rWifiVar.prP2pSpecificBssInfo;
 				P_P2P_CHNL_REQ_INFO_T prChnlReqInfo = &prP2pFsmInfo->rChnlReqInfo;
 				P_P2P_SCAN_REQ_INFO_T prScanReqInfo = &(prP2pFsmInfo->rScanReqInfo);
 

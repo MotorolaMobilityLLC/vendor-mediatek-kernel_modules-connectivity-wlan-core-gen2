@@ -76,7 +76,15 @@ static void statsInfoEnvDisplay(GLUE_INFO_T *prGlueInfo, UINT8 *prInBuf, UINT32 
 	UINT32 u4RxErrBitmap;
 	STATS_INFO_ENV_T *prInfo;
 	UINT32 u4Total, u4RateId;
-
+#if CFG_ENABLE_PER_STA_STATISTICS_LOG
+	UINT_32 u4LinkScore;
+/*
+ * rQueryStaStatistics.u4TxFailCount + rQueryStaStatistics.u4TxLifeTimeoutCount;
+ */
+	UINT_32 u4TotalError;
+	UINT_32 u4TxExceedThresholdCount;
+	UINT_32 u4TxTotalCount;
+#endif
 /*
  * [wlan] statsInfoEnvRequest: (INIT INFO) statsInfoEnvRequest cmd ok.
  * [wlan] statsEventHandle: (INIT INFO) <stats> statsEventHandle: Rcv a event
@@ -435,11 +443,10 @@ static void statsInfoEnvDisplay(GLUE_INFO_T *prGlueInfo, UINT8 *prInBuf, UINT32 
 #endif
 
 #if CFG_ENABLE_PER_STA_STATISTICS_LOG
-		UINT_32 u4LinkScore;
 		/* rQueryStaStatistics.u4TxFailCount + rQueryStaStatistics.u4TxLifeTimeoutCount; */
-		UINT_32 u4TotalError = prInfo->u4TxDataCntErr;
-		UINT_32 u4TxExceedThresholdCount = prStaRec->u4ThresholdCounter;
-		UINT_32 u4TxTotalCount = prStaRec->u4TotalTxPktsNumber;
+		u4TotalError = prInfo->u4TxDataCntErr;
+		u4TxExceedThresholdCount = prStaRec->u4ThresholdCounter;
+		u4TxTotalCount = prStaRec->u4TotalTxPktsNumber;
 
 		if (u4TxTotalCount) {
 			if (u4TxExceedThresholdCount <= u4TxTotalCount)

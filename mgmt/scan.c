@@ -2546,6 +2546,7 @@ static WLAN_STATUS __scanProcessBeaconAndProbeResp(IN P_ADAPTER_T prAdapter, IN 
 #if CFG_SLT_SUPPORT
 	P_SLT_INFO_T prSltInfo = (P_SLT_INFO_T) NULL;
 #endif
+	BOOLEAN fgAddToScanResult = FALSE;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
@@ -2693,7 +2694,7 @@ static WLAN_STATUS __scanProcessBeaconAndProbeResp(IN P_ADAPTER_T prAdapter, IN 
 		if (prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE || prBssDesc->eBSSType == BSS_TYPE_IBSS) {
 			/* for AIS, send to host */
 			prAdapter->rWlanInfo.u4ScanDbgTimes3++;
-			BOOLEAN fgAddToScanResult = FALSE;
+
 
 			if (prConnSettings->fgIsScanReqIssued || prAdapter->rWifiVar.rScanInfo.fgNloScanning
 #if CFG_SUPPORT_SCN_PSCN

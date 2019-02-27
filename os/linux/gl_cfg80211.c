@@ -85,6 +85,7 @@ static UINT_8 gucKeyIndex = 255;
  */
 /*----------------------------------------------------------------------------*/
 #if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
+int
 mtk_cfg80211_change_iface(struct wiphy *wiphy,
 			  struct net_device *ndev, enum nl80211_iftype type, struct vif_params *params)
 #else

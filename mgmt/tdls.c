@@ -213,7 +213,9 @@ static VOID TdlsCmdTestRxIndicatePkts(GLUE_INFO_T *prGlueInfo, struct sk_buff *p
 	prGlueInfo->rNetDevStats.rx_packets++;
 
 	/* pass to upper layer */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
 	prNetDev->last_rx = jiffies;
+#endif
 	prSkb->protocol = eth_type_trans(prSkb, prNetDev);
 	prSkb->dev = prNetDev;
 
