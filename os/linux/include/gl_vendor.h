@@ -120,6 +120,12 @@ typedef enum {
 	LSTATS_SUBCMD_GET_INFO = ANDROID_NL80211_SUBCMD_LSTATS_RANGE_START,
 } LSTATS_SUB_COMMAND;
 
+/* moved from wifi_logger.cpp */
+enum DEBUG_SUB_COMMAND {
+	LOGGER_START_LOGGING = ANDROID_NL80211_SUBCMD_DEBUG_RANGE_START,
+	LOGGER_GET_VER
+};
+
 typedef enum {
 	WIFI_OFFLOAD_START_MKEEP_ALIVE = ANDROID_NL80211_SUBCMD_WIFI_OFFLOAD_RANGE_START,
 	WIFI_OFFLOAD_STOP_MKEEP_ALIVE,
@@ -159,6 +165,12 @@ typedef enum {
 	WIFI_ATTRIBUTE_ROAMING_STATE
 
 } WIFI_ATTRIBUTE;
+
+/* moved from wifi_logger.cpp */
+enum LOGGER_ATTRIBUTE {
+	LOGGER_ATTRIBUTE_DRIVER_VER,
+	LOGGER_ATTRIBUTE_FW_VER
+};
 
 typedef enum {
 	GSCAN_ATTRIBUTE_CAPABILITIES = 1,
@@ -750,6 +762,9 @@ int mtk_cfg80211_vendor_packet_keep_alive_start(struct wiphy *wiphy, struct wire
 
 int mtk_cfg80211_vendor_packet_keep_alive_stop(struct wiphy *wiphy, struct wireless_dev *wdev,
 					       const void *data, int data_len);
+
+int mtk_cfg80211_vendor_get_version(struct wiphy *wiphy, struct wireless_dev *wdev,
+				    const void *data, int data_len);
 
 int mtk_cfg80211_vendor_event_complete_scan(struct wiphy *wiphy, struct wireless_dev *wdev,
 					    WIFI_SCAN_EVENT complete);
