@@ -1,11 +1,9 @@
 ###############################################################################
 # Necessary Check
 
-ifeq ($(AUTOCONF_H),)
-    $(error AUTOCONF_H is not defined)
+ifneq ($(KERNEL_OUT),)
+    ccflags-y += -imacros $(KERNEL_OUT)/include/generated/autoconf.h
 endif
-
-ccflags-y += -imacros $(AUTOCONF_H)
 
 ifeq ($(CONFIG_MTK_COMBO_CHIP),)
     $(error CONFIG_MTK_COMBO_CHIP not defined)
@@ -163,7 +161,7 @@ MODULE_NAME := wlan_drv_gen2
 #obj-$(CONFIG_MTK_COMBO_WIFI) += $(MODULE_NAME).o
 
 #if CONFIG_MTK_COMBO_WIFI=m ==> obj-m means ko module, not build in obj-y
-obj-m += $(MODULE_NAME).o 
+obj-m += $(MODULE_NAME).o
 
 # ---------------------------------------------------
 # Directory List
