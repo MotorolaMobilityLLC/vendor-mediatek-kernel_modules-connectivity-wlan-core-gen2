@@ -988,6 +988,26 @@ typedef struct _PACKET_DROP_SETTING_V1_T {
 
 } __KAL_ATTRIB_PACKED__ PACKET_DROP_SETTING_V1_T, *P_PACKET_DROP_SETTING_V1_T;
 
+#if CFG_SUPPORT_OSHARE
+/*OSHARE Mode*/
+#define MAX_OSHARE_MODE_LENGTH		64
+#define OSHARE_MODE_MAGIC_CODE		0x18
+#define OSHARE_MODE_CMD_V1			0x1
+
+struct OSHARE_MODE_T {
+	UINT_8   cmdVersion;/*CMD version = OSHARE_MODE_CMD_V1 */
+	UINT_8   cmdType;/*1-set  0-query*/
+	UINT_8   magicCode;/*It's like CRC, OSHARE_MODE_MAGIC_CODE*/
+	UINT_8   cmdBufferLen;/*buffer length <= 64*/
+	UINT_8   buffer[MAX_OSHARE_MODE_LENGTH];
+};
+
+struct OSHARE_MODE_SETTING_V1_T {
+	UINT_8    osharemode;/*0: disable, 1:Enable*/
+	UINT_8    reserved[7];
+};
+#endif
+
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
 /*--------------------------------------------------------------*/
 /*! \brief MTK Auto Channel Selection related Container         */
@@ -1595,6 +1615,12 @@ wlanoidSetTxPower(IN P_ADAPTER_T prAdapter,
 WLAN_STATUS
 wlanoidSetRxPacketFilterPriv(IN	P_ADAPTER_T prAdapter,
 	IN	PVOID pvSetBuffer, IN	UINT_32 u4SetBufferLen, OUT PUINT_32 pu4SetInfoLen);
+
+#if CFG_SUPPORT_OSHARE
+	WLAN_STATUS
+	wlanoidSetOshareMode(IN  P_ADAPTER_T prAdapter,
+	IN	PVOID		pvSetBuffer, IN  UINT_32	 u4SetBufferLen, OUT PUINT_32	 pu4SetInfoLen);
+#endif
 
 #if CFG_SUPPORT_BUILD_DATE_CODE
 WLAN_STATUS
