@@ -986,6 +986,9 @@ struct _ADAPTER_T {
 #if CFG_SUPPORT_GAMING_MODE
 	BOOLEAN fgEnGamingMode;
 #endif
+#if CFG_SUPPORT_OSHARE
+	BOOLEAN fgEnOshareMode;
+#endif
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
