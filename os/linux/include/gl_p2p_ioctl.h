@@ -297,10 +297,15 @@ extern UINT_32 mtk_cipher_suites[6];
 */
 
 #if CFG_ENABLE_WIFI_DIRECT_CFG_80211
+#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
+int mtk_p2p_cfg80211_change_iface(struct wiphy *wiphy,
+				  struct net_device *ndev,
+				  enum nl80211_iftype type, struct vif_params *params);
+#else
 int mtk_p2p_cfg80211_change_iface(struct wiphy *wiphy,
 				  struct net_device *ndev,
 				  enum nl80211_iftype type, u32 *flags, struct vif_params *params);
-
+#endif
 int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 			     struct net_device *ndev,
 			     u8 key_index, bool pairwise, const u8 *mac_addr, struct key_params *params);

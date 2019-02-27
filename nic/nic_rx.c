@@ -2995,10 +2995,17 @@ nicRxWaitResponse(IN P_ADAPTER_T prAdapter,
 			rCurTime = ktime_get();
 			if (ktime_to_ms(ktime_sub(rCurTime, rStartTime)) >
 			    RX_RESPONSE_TIMEOUT) {
+#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
+				DBGLOG(RX, ERROR,
+				       "RX_RESPONSE_TIMEOUT %u %u %lld %lld\n",
+				       u4PktLen, i, rStartTime,
+				       rCurTime);
+#else
 				DBGLOG(RX, ERROR,
 				       "RX_RESPONSE_TIMEOUT %u %u %lld %lld\n",
 				       u4PktLen, i, rStartTime.tv64,
 				       rCurTime.tv64);
+#endif
 				return WLAN_STATUS_FAILURE;
 			}
 
