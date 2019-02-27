@@ -1080,7 +1080,7 @@
 #define ELEM_MIN_LEN_MTK_OUI                        7
 #define VENDOR_OUI_MTK                              { 0x00, 0x0C, 0xE7 }
 #define MTK_SYNERGY_CAP_SUPPORT_24G_MCS89           BIT(3)
-#define MTK_SYNERGY_CAP0                            (MTK_SYNERGY_CAP_SUPPORT_24G_MCS89)
+#define MTK_SYNERGY_CAP0                            0x0
 #define MTK_SYNERGY_CAP1                            0x0
 #define MTK_SYNERGY_CAP2                            0x0
 #define MTK_SYNERGY_CAP3                            0x0
