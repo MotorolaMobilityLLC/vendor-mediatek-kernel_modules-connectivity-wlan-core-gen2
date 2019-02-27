@@ -1273,16 +1273,6 @@ VOID p2pFsmRunEventStopAP(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 		/* Enter IDLE state. */
 		SET_NET_PWR_STATE_IDLE(prAdapter, NETWORK_TYPE_P2P_INDEX);
 
-		DBGLOG(P2P, INFO, "Re activate P2P Network.\n");
-#if !CFG_SUPPORT_RLM_ACT_NETWORK
-		nicDeactivateNetwork(prAdapter, NETWORK_TYPE_P2P_INDEX);
-		nicActivateNetwork(prAdapter, NETWORK_TYPE_P2P_INDEX);
-#else
-		rlmDeactivateNetwork(prAdapter, NETWORK_TYPE_P2P_INDEX, NET_ACTIVE_SRC_NONE);
-		rlmActivateNetwork(prAdapter, NETWORK_TYPE_P2P_INDEX, NET_ACTIVE_SRC_NONE);
-#endif
-
-
 #if CFG_SUPPORT_WFD
 		p2pFsmRunEventWfdSettingUpdate(prAdapter, NULL);
 #endif

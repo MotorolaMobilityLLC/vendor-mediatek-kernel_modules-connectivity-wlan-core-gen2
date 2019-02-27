@@ -190,9 +190,21 @@ VOID p2pFuncSwitchOPMode(IN P_ADAPTER_T prAdapter,
 
 			switch (prP2pBssInfo->eCurrentOPMode) {
 			case OP_MODE_ACCESS_POINT:
-				p2pFuncDissolve(prAdapter, prP2pBssInfo, TRUE, REASON_CODE_DEAUTH_LEAVING_BSS);
+				if (prP2pBssInfo->eIntendOPMode
+					!= OP_MODE_P2P_DEVICE) {
+					p2pFuncDissolve(prAdapter,
+						prP2pBssInfo, TRUE,
+						REASON_CODE_DEAUTH_LEAVING_BSS);
 
-				p2pFsmRunEventStopAP(prAdapter, NULL);
+					p2pFsmRunEventStopAP(prAdapter, NULL);
+				} else if (IS_NET_PWR_STATE_IDLE(prAdapter,
+					NETWORK_TYPE_P2P_INDEX) &&
+					IS_NET_ACTIVE(prAdapter,
+					NETWORK_TYPE_P2P_INDEX)) {
+					DBGLOG(P2P, TRACE,
+						"under deauth procedure, Quit.\n");
+					return;
+				}
 				break;
 			default:
 				break;
@@ -790,13 +802,14 @@ p2pFuncDissolve(IN P_ADAPTER_T prAdapter,
 			 */
 			{
 				P_LINK_T prStaRecOfClientList = (P_LINK_T) NULL;
+				UINT_32 u4ClientCount = 0;
 
 				/* Send deauth. */
 				authSendDeauthFrame(prAdapter,
 						    NULL, (P_SW_RFB_T) NULL, u2ReasonCode, (PFN_TX_DONE_HANDLER) NULL);
 
 				prStaRecOfClientList = &prP2pBssInfo->rStaRecOfClientList;
-
+				u4ClientCount = prStaRecOfClientList->u4NumElem;
 				while (!LINK_IS_EMPTY(prStaRecOfClientList)) {
 					P_STA_RECORD_T prCurrStaRec;
 
@@ -809,7 +822,7 @@ p2pFuncDissolve(IN P_ADAPTER_T prAdapter,
 
 				}
 				prAdapter->rWifiVar.prP2pFsmInfo->rScanReqInfo.fgIsGOInitialDone = 0;
-				if (prStaRecOfClientList->u4NumElem == 0)
+				if (u4ClientCount == 0)
 					p2pFuncDeauthComplete(prAdapter, prP2pBssInfo);
 			}
 
@@ -824,8 +837,12 @@ p2pFuncDissolve(IN P_ADAPTER_T prAdapter,
 		wlanReleasePowerControl(prAdapter);
 
 		if (prAdapter->rWifiVar.prP2pFsmInfo->fgIsApMode) {
-			DBGLOG(P2P, INFO, "Wait 100ms for deauth TX in Hotspot\n");
-			kalMdelay(100);
+			DBGLOG(P2P, INFO, "Wait 500ms for deauth TX in Hotspot\n");
+			if (prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT
+				&& prP2pBssInfo->eIntendOPMode == OP_MODE_NUM)
+				prP2pBssInfo->eIntendOPMode = OP_MODE_P2P_DEVICE;
+			kalMdelay(500);
+			DBGLOG(P2P, TRACE, "Wait done for deauth TX in Hotspot\n");
 		} else {
 			DBGLOG(P2P, INFO, "Wait 500ms for deauth TX in case of GC in PS\n");
 			kalMdelay(500);
@@ -4026,7 +4043,7 @@ VOID p2pFuncDeauthComplete(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prP2pBssInf
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prP2pBssInfo != NULL));
 
-		DBGLOG(P2P, TRACE, "p2pFuncDeauthComplete\n");
+		DBGLOG(P2P, INFO, "p2pFuncDeauthComplete\n");
 
 		/* GO: It would stop Beacon TX. GC: Stop all BSS related PS function. */
 		nicPmIndicateBssAbort(prAdapter, NETWORK_TYPE_P2P_INDEX);
@@ -4035,6 +4052,12 @@ VOID p2pFuncDeauthComplete(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prP2pBssInf
 		rlmBssAborted(prAdapter, prP2pBssInfo);
 
 		p2pChangeMediaState(prAdapter, PARAM_MEDIA_STATE_DISCONNECTED);
+
+#if !CFG_SUPPORT_RLM_ACT_NETWORK
+		nicDeactivateNetwork(prAdapter, NETWORK_TYPE_P2P_INDEX);
+#else
+		rlmDeactivateNetwork(prAdapter, NETWORK_TYPE_P2P_INDEX, NET_ACTIVE_SRC_NONE);
+#endif
 
 		/* Release CNM channel */
 		nicUpdateBss(prAdapter, NETWORK_TYPE_P2P_INDEX);
