@@ -1847,8 +1847,7 @@ VOID p2pFsmRunEventJoinComplete(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHd
 
 		if (prAdapter->rWifiVar.arBssInfo[NETWORK_TYPE_P2P_INDEX].eConnectionState ==
 		    PARAM_MEDIA_STATE_CONNECTED) {
-			/* Return to IDLE state. */
-			p2pFsmStateTransition(prAdapter, prP2pFsmInfo, P2P_STATE_IDLE);
+			/* do nothing & wait for timeout or EAPOL 4/4 TX done */
 		} else {
 			/* p2pFsmStateTransition(prAdapter, prP2pFsmInfo, P2P_STATE_IDLE); */
 			/* one more scan */
@@ -2682,6 +2681,36 @@ p2pProcessEvent_UpdateNOAParam(IN P_ADAPTER_T prAdapter,
 
 	/* update beacon content by the change */
 	bssUpdateBeaconContent(prAdapter, ucNetTypeIndex);
+}
+
+VOID p2pFsmNotifyTxStatus(IN P_ADAPTER_T prAdapter, UINT_8 *pucEvtBuf)
+{
+	EVENT_TX_DONE_STATUS_T *prTxDone;
+	P_BSS_INFO_T prBssInfo = (P_BSS_INFO_T) NULL;
+	P_P2P_FSM_INFO_T prP2pFsmInfo = (P_P2P_FSM_INFO_T) NULL;
+	PUINT_8 pucPkt;
+
+	prBssInfo = &(prAdapter->rWifiVar.arBssInfo[NETWORK_TYPE_P2P_INDEX]);
+	prP2pFsmInfo = prAdapter->rWifiVar.prP2pFsmInfo;
+	prTxDone = (EVENT_TX_DONE_STATUS_T *) pucEvtBuf;
+	pucPkt = &prTxDone->aucPktBuf[64];
+
+	if (prBssInfo == NULL || prP2pFsmInfo == NULL || prTxDone == NULL ||
+			pucPkt == NULL)
+		return;
+
+	if (prBssInfo->eConnectionState != PARAM_MEDIA_STATE_CONNECTED ||
+			prBssInfo->eCurrentOPMode != OP_MODE_INFRASTRUCTURE)
+		return;
+
+	if (prP2pFsmInfo->eCurrentState != P2P_STATE_GC_JOIN)
+		return;
+
+	if (secGetEapolKeyType(pucPkt) == EAPOL_KEY_4_OF_4 &&
+			prTxDone->ucStatus == 0) {
+		/* Finish GC connection process. */
+		p2pFsmStateTransition(prAdapter, prP2pFsmInfo, P2P_STATE_IDLE);
+	}
 }
 
 #endif /* CFG_ENABLE_WIFI_DIRECT */
