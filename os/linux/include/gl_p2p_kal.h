@@ -207,4 +207,7 @@ BOOLEAN kalP2PReachMaxClients(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4NumClien
 
 VOID kalP2pUnlinkBss(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 aucBSSID[]);
 
+void kalP2pIndicateQueuedMgmtFrame(IN P_GLUE_INFO_T prGlueInfo,
+		IN struct P2P_QUEUED_ACTION_FRAME *prFrame);
+
 #endif /* _GL_P2P_KAL_H */

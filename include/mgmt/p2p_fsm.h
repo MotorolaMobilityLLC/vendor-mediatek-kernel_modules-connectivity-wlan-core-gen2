@@ -315,6 +315,9 @@ struct _P2P_FSM_INFO_T {
 	enum _ENUM_P2P_DEV_EXT_LISTEN_T eListenExted;
 
 	BOOLEAN fgIsChannelExtended;
+
+	/* Queued p2p action frame */
+	struct P2P_QUEUED_ACTION_FRAME rQueuedActionFrame;
 };
 
 /*---------------- Messages -------------------*/
@@ -1812,6 +1815,7 @@ static inline VOID p2pDataTypeCheck(VOID)
 VOID p2pFsmNotifyTxStatus(IN P_ADAPTER_T prAdapter, UINT_8 *pucEvtBuf);
 
 VOID p2pFsmNotifyRxP2pActionFrame(IN P_ADAPTER_T prAdapter,
-		IN enum P2P_ACTION_FRAME_TYPE eP2pFrameType);
+		IN enum P2P_ACTION_FRAME_TYPE eP2pFrameType,
+		OUT u_int8_t *prFgBufferFrame);
 
 #endif /* _P2P_FSM_H */

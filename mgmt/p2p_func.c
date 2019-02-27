@@ -2035,6 +2035,42 @@ static void p2pProcessActionResponse(IN P_ADAPTER_T prAdapter,
 		prP2pFsmInfo->eCNNState = P2P_CNN_NORMAL;
 }
 
+static void p2pFunBufferP2pActionFrame(IN P_ADAPTER_T prAdapter,
+		IN P_SW_RFB_T prSwRfb)
+{
+	P_P2P_FSM_INFO_T prP2pFsmInfo = (P_P2P_FSM_INFO_T) NULL;
+	struct P2P_QUEUED_ACTION_FRAME *prFrame;
+
+	prP2pFsmInfo = prAdapter->rWifiVar.prP2pFsmInfo;
+
+	if (prP2pFsmInfo == NULL)
+		return;
+
+	prFrame = &prP2pFsmInfo->rQueuedActionFrame;
+
+	if (prFrame->u2Length > 0) {
+		DBGLOG(P2P, WARN, "p2p action frames are pending, drop it.\n");
+		return;
+	}
+
+	if (prSwRfb->u2PacketLen <= 0) {
+		DBGLOG(P2P, WARN, "Invalid packet.\n");
+		return;
+	}
+
+	DBGLOG(P2P, INFO, "Buffer the p2p action frame.\n");
+	prFrame->u4Freq = nicChannelNum2Freq(prSwRfb->prHifRxHdr->ucHwChannelNum) / 1000;
+	prFrame->u2Length = prSwRfb->u2PacketLen;
+	prFrame->prHeader = cnmMemAlloc(prAdapter, RAM_TYPE_BUF,
+			prSwRfb->u2PacketLen);
+	if (prFrame->prHeader == NULL) {
+		DBGLOG(P2P, WARN, "Allocate buffer fail.\n");
+		p2pFunCleanQueuedMgmtFrame(prAdapter, prFrame);
+		return;
+	}
+	kalMemCopy(prFrame->prHeader, prSwRfb->pvHeader, prSwRfb->u2PacketLen);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
 * @brief This function will validate the Rx Probe Request Frame and then return
@@ -2054,6 +2090,7 @@ VOID p2pFuncValidateRxActionFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRf
 	P_P2P_FSM_INFO_T prP2pFsmInfo = (P_P2P_FSM_INFO_T) NULL;
 	P_WLAN_ACTION_FRAME prActFrame;
 	PUINT_8 pucVendor = NULL;
+	u_int8_t fgBufferFrame = FALSE;
 
 	DEBUGFUNC("p2pFuncValidateProbeReq");
 
@@ -2074,9 +2111,14 @@ VOID p2pFuncValidateRxActionFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRf
 				p2pFunAbortOngoingScan(prAdapter);
 			}
 			p2pProcessActionResponse(prAdapter, *(pucVendor + 4));
-			p2pFsmNotifyRxP2pActionFrame(prAdapter, *(pucVendor + 4));
+			p2pFsmNotifyRxP2pActionFrame(prAdapter, *(pucVendor + 4), &fgBufferFrame);
 			break;
 		default:
+			break;
+		}
+
+		if (fgBufferFrame) {
+			p2pFunBufferP2pActionFrame(prAdapter, prSwRfb);
 			break;
 		}
 
@@ -3997,5 +4039,20 @@ VOID p2pFuncDeauthComplete(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prP2pBssInf
 		/* Release CNM channel */
 		nicUpdateBss(prAdapter, NETWORK_TYPE_P2P_INDEX);
 	} while (FALSE);
+}
+
+void p2pFunCleanQueuedMgmtFrame(IN P_ADAPTER_T prAdapter,
+		IN struct P2P_QUEUED_ACTION_FRAME *prFrame)
+{
+	if (prAdapter == NULL || prFrame == NULL || prFrame->u2Length == 0 ||
+			prFrame->prHeader == NULL)
+		return;
+
+	DBGLOG(P2P, INFO, "Clean queued p2p action frame.\n");
+
+	prFrame->u4Freq = 0;
+	prFrame->u2Length = 0;
+	cnmMemFree(prAdapter, prFrame->prHeader);
+	prFrame->prHeader = NULL;
 }
 
