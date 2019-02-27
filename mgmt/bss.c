@@ -1885,11 +1885,6 @@ VOID bssInitForAP(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo, IN BOOLEA
 	UINT_8 auAifsForBcast[WMM_AC_INDEX_NUM] = { 3, 7, 2, 2 };
 	UINT_8 auTxopForBcast[WMM_AC_INDEX_NUM] = { 0, 0, 94, 47 };	/* If the AP is OFDM */
 
-	UINT_8 auCWminLog2[WMM_AC_INDEX_NUM] = { 4 /*BE*/, 4 /*BK*/, 3 /*VO*/, 2 /*VI*/ };
-	UINT_8 auCWmaxLog2[WMM_AC_INDEX_NUM] = { 7, 10, 4, 3 };
-	UINT_8 auAifs[WMM_AC_INDEX_NUM] = { 3, 7, 1, 1 };
-	UINT_8 auTxop[WMM_AC_INDEX_NUM] = { 0, 0, 94, 47 };	/* If the AP is OFDM */
-
 	DBGLOG(BSS, LOUD, "\n");
 
 	ASSERT(prBssInfo);
@@ -1971,10 +1966,13 @@ VOID bssInitForAP(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo, IN BOOLEA
 	for (eAci = 0; eAci < WMM_AC_INDEX_NUM; eAci++) {
 
 		prACQueParms[eAci].fgIsACMSet = FALSE;
-		prACQueParms[eAci].u2Aifsn = auAifs[eAci];
-		prACQueParms[eAci].u2CWmin = BIT(auCWminLog2[eAci]) - 1;
-		prACQueParms[eAci].u2CWmax = BIT(auCWmaxLog2[eAci]) - 1;
-		prACQueParms[eAci].u2TxopLimit = auTxop[eAci];
+		prACQueParms[eAci].u2Aifsn = prAdapter->rWifiVar.aucAifsN[eAci];
+		prACQueParms[eAci].u2CWmin =
+			BIT(prAdapter->rWifiVar.aucCwMin[eAci]) - 1;
+		prACQueParms[eAci].u2CWmax =
+			BIT(prAdapter->rWifiVar.au2CwMax[eAci]) - 1;
+		prACQueParms[eAci].u2TxopLimit =
+			prAdapter->rWifiVar.au2TxOp[eAci];
 
 		DBGLOG(BSS, INFO, "eAci = %d, ACM = %d, Aifsn = %d, CWmin = %d, CWmax = %d, TxopLimit = %d\n",
 				   eAci, prACQueParms[eAci].fgIsACMSet,
