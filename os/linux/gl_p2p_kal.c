@@ -1591,3 +1591,31 @@ VOID kalP2pUnlinkBss(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 aucBSSID[])
 			aucBSSID, FALSE, NULL) != NULL)
 		scanRemoveBssDescByBssid(prGlueInfo->prAdapter, aucBSSID);
 }
+
+void kalP2pIndicateQueuedMgmtFrame(IN P_GLUE_INFO_T prGlueInfo,
+		IN struct P2P_QUEUED_ACTION_FRAME *prFrame)
+{
+	P_GL_P2P_INFO_T prGlueP2pInfo = (P_GL_P2P_INFO_T) NULL;
+
+	if ((prGlueInfo == NULL) || (prFrame == NULL))
+		return;
+
+	if (prFrame->prHeader == NULL || prFrame->u2Length == 0) {
+		DBGLOG(P2P, WARN, "Frame pointer is null or length is 0.\n");
+		return;
+	}
+
+	DBGLOG(P2P, INFO, "Indicate queued p2p action frame.\n");
+
+	prGlueP2pInfo = prGlueInfo->prP2PInfo;
+
+	cfg80211_rx_mgmt(
+		/* struct net_device * dev, */
+		prGlueP2pInfo->prWdev,
+		prFrame->u4Freq,
+		0,
+		prFrame->prHeader,
+		prFrame->u2Length,
+		GFP_ATOMIC);
+}
+

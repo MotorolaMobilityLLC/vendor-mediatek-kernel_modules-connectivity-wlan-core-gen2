@@ -206,6 +206,9 @@ VOID p2pFsmUninit(IN P_ADAPTER_T prAdapter)
 
 		wlanAcquirePowerControl(prAdapter);
 
+		p2pFunCleanQueuedMgmtFrame(prAdapter,
+				&prP2pFsmInfo->rQueuedActionFrame);
+
 		/* Release all pending CMD queue. */
 		DBGLOG(P2P, TRACE, "p2pFsmUninit: wlanProcessCommandQueue, num of element:%d\n",
 				    (UINT_32) prAdapter->prGlueInfo->rCmdQueue.u4NumElem);
@@ -624,6 +627,9 @@ VOID p2pFsmRunEventChannelAbort(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHd
 		prChnlReqInfo = &prP2pFsmInfo->rChnlReqInfo;
 
 		DBGLOG(P2P, TRACE, "p2pFsmRunEventChannelAbort\n");
+
+		p2pFunCleanQueuedMgmtFrame(prAdapter,
+				&prP2pFsmInfo->rQueuedActionFrame);
 
 		if ((prChnlAbortMsg->u8Cookie == prChnlReqInfo->u8Cookie) && (prChnlReqInfo->fgIsChannelRequested)) {
 
@@ -2727,13 +2733,27 @@ VOID p2pFsmNotifyTxStatus(IN P_ADAPTER_T prAdapter, UINT_8 *pucEvtBuf)
 }
 
 VOID p2pFsmNotifyRxP2pActionFrame(IN P_ADAPTER_T prAdapter,
-		IN enum P2P_ACTION_FRAME_TYPE eP2pFrameType)
+		IN enum P2P_ACTION_FRAME_TYPE eP2pFrameType,
+		OUT u_int8_t *prFgBufferFrame)
 {
 	P_P2P_FSM_INFO_T prP2pFsmInfo = (P_P2P_FSM_INFO_T) NULL;
+	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
 
 	prP2pFsmInfo = prAdapter->rWifiVar.prP2pFsmInfo;
-	if (prP2pFsmInfo->eCurrentState != P2P_STATE_CHNL_ON_HAND)
+	prP2pBssInfo = &(prAdapter->rWifiVar.arBssInfo[NETWORK_TYPE_P2P_INDEX]);
+
+	if (prP2pFsmInfo->eCurrentState != P2P_STATE_CHNL_ON_HAND &&
+			prP2pBssInfo->eConnectionState != PARAM_MEDIA_STATE_CONNECTED) {
+		switch (eP2pFrameType) {
+		case P2P_INVITATION_REQ:
+			*prFgBufferFrame = TRUE;
+			break;
+		default:
+			break;
+		}
 		return;
+	}
+
 	if (prP2pFsmInfo->eCNNState != P2P_CNN_NORMAL)
 		return;
 
