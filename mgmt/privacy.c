@@ -859,6 +859,7 @@ VOID secHandleTxStatus(ADAPTER_T *prAdapter, UINT_8 *pucEvtBuf)
 	p2pFuncEAPfailureWorkaround(prAdapter, pucEvtBuf);
 #endif
 	secHandleEapolTxStatus(prAdapter, pucEvtBuf);
+	p2pFsmNotifyTxStatus(prAdapter, pucEvtBuf);
 }
 
 VOID secHandleRxEapolPacket(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prRetSwRfb,
