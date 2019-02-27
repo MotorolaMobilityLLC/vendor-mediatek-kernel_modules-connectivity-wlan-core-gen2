@@ -711,7 +711,6 @@ nla_put_failure:
 		kalMemFree(prWifiScanCmd, VIR_MEM_TYPE, sizeof(PARAM_WIFI_GSCAN_CMD_PARAMS));
 	return i4Status;
 }
-#endif
 
 int mtk_cfg80211_vendor_set_significant_change(struct wiphy *wiphy, struct wireless_dev *wdev,
 					       const void *data, int data_len)
@@ -952,7 +951,6 @@ nla_put_failure:
 	return i4Status;
 }
 
-#if CFG_SUPPORT_GSCN
 int mtk_cfg80211_vendor_enable_scan(struct wiphy *wiphy, struct wireless_dev *wdev, const void *data, int data_len)
 {
 	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
