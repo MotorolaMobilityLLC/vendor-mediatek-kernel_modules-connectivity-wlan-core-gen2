@@ -131,7 +131,9 @@ typedef VOID (*MTK_WCN_STP_EVENT_CB) (VOID);
 typedef INT32 (*MTK_WCN_STP_IF_TX) (const PUINT8 data, const UINT32 size, PUINT32 written_size);
 /* export for HIF driver */
 typedef VOID(*MTK_WCN_STP_IF_RX)(const PUINT8 data, INT32 size);
-
+typedef INT32(*MTK_WCN_STP_RX_HAS_PENDING_DATA) (VOID);
+typedef INT32(*MTK_WCN_STP_TX_HAS_PENDING_DATA) (VOID);
+typedef struct _OSAL_THREAD_ (*MTK_WCN_STP_RX_THREAD_GET) (VOID);
 typedef enum {
 	STP_UART_IF_TX = 0,
 	STP_SDIO_IF_TX = 1,
