@@ -725,6 +725,10 @@ scanP2pProcessBeaconAndProbeResp(IN P_ADAPTER_T prAdapter,
 			nicPmIndicateBssConnected(prAdapter, NETWORK_TYPE_P2P_INDEX);
 		}
 
+		if ((prWlanBeaconFrame->u2FrameCtrl & MASK_FRAME_TYPE) == MAC_FRAME_BEACON &&
+				prAdapter->prGlueInfo->prP2PInfo->prScanRequest == NULL)
+			fgIsSkipThisBeacon = TRUE;
+
 		do {
 			RF_CHANNEL_INFO_T rChannelInfo;
 
@@ -740,8 +744,13 @@ scanP2pProcessBeaconAndProbeResp(IN P_ADAPTER_T prAdapter,
 				/* Only report Probe Response frame to supplicant. */
 				/* Probe response collect much more information. */
 
-				if (fgIsSkipThisBeacon || prBssDesc->eBand == BAND_2G4)
+				if (fgIsSkipThisBeacon || prBssDesc->eBand == BAND_2G4) {
+					DBGLOG(P2P, TRACE, "Skip beacon [" MACSTR "][%s][ch %d]\n",
+							MAC2STR(prWlanBeaconFrame->aucBSSID),
+							prBssDesc->aucSSID,
+							prBssDesc->ucChannelNum);
 					break;
+				}
 
 				prBssDesc->eBand = HIF_RX_HDR_GET_RF_BAND(prSwRfb->prHifRxHdr);
 			} else {

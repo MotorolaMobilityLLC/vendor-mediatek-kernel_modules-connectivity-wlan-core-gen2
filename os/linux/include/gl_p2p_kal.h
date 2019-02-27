@@ -205,4 +205,6 @@ VOID kalP2PSetMaxClients(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4MaxClient);
 
 BOOLEAN kalP2PReachMaxClients(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4NumClient);
 
+VOID kalP2pUnlinkBss(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 aucBSSID[]);
+
 #endif /* _GL_P2P_KAL_H */

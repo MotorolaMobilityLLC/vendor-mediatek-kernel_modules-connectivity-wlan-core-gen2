@@ -1324,21 +1324,28 @@ int mtk_p2p_cfg80211_change_iface(IN struct wiphy *wiphy,
 		switch (type) {
 		case NL80211_IFTYPE_P2P_CLIENT:
 			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_P2P_CLIENT.\n");
+			prSwitchModeMsg->eIftype = IFTYPE_P2P_CLIENT;
 		case NL80211_IFTYPE_STATION:
-			if (type == NL80211_IFTYPE_STATION)
+			if (type == NL80211_IFTYPE_STATION) {
 				DBGLOG(P2P, TRACE, "NL80211_IFTYPE_STATION.\n");
+				prSwitchModeMsg->eIftype = IFTYPE_STATION;
+			}
 			prSwitchModeMsg->eOpMode = OP_MODE_INFRASTRUCTURE;
 			break;
 		case NL80211_IFTYPE_AP:
 			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_AP.\n");
+			prSwitchModeMsg->eIftype = IFTYPE_AP;
 		case NL80211_IFTYPE_P2P_GO:
-			if (type == NL80211_IFTYPE_P2P_GO)
+			if (type == NL80211_IFTYPE_P2P_GO) {
 				DBGLOG(P2P, TRACE, "NL80211_IFTYPE_P2P_GO not AP.\n");
+				prSwitchModeMsg->eIftype = IFTYPE_P2P_GO;
+			}
 			prSwitchModeMsg->eOpMode = OP_MODE_ACCESS_POINT;
 			break;
 		default:
 			DBGLOG(P2P, TRACE, "Other type :%d .\n", type);
 			prSwitchModeMsg->eOpMode = OP_MODE_P2P_DEVICE;
+			prSwitchModeMsg->eIftype = IFTYPE_P2P_DEVICE;
 			break;
 		}
 
