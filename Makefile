@@ -35,6 +35,12 @@ ccflags-y += -DCFG_SUPPORT_TSF_USING_BOOTTIME=1
 ccflags-y += -DCFG_P2P_LEGACY_COEX_REVISE=1
 ccflags-y += -DARP_MONITER_ENABLE=1
 
+ifeq ($(CONFIG_MTK_CONN_LTE_IDC_SUPPORT), y)
+    ccflags-y += -DWMT_IDC_SUPPORT=1
+else
+    ccflags-y += -DWMT_IDC_SUPPORT=0
+endif
+
 ifeq ($(CONFIG_MTK_WAPI_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_WAPI=1
 else
@@ -156,6 +162,7 @@ ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include/mach/
 ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/common/common_main/include
 ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/common/common_main/linux/include
+ccflags-y += -DMTK_WCN_WMT_STP_EXP_SYMBOL_ABSTRACT
 
 MODULE_NAME := wlan_drv_gen2
 #obj-$(CONFIG_MTK_COMBO_WIFI) += $(MODULE_NAME).o
