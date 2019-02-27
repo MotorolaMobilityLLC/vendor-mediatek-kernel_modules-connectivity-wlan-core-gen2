@@ -2260,9 +2260,18 @@ int tx_thread(void *data)
 	prRxCtrl = &prGlueInfo->prAdapter->rRxCtrl;
 
 	current->flags |= PF_NOFREEZE;
-	if (current->policy == SCHED_NORMAL)
-		current->static_prio = DEFAULT_PRIO - 19;
+
+	DBGLOG(INIT, TRACE, "1. policy: %d, static_prio: %d",
+		current->policy, current->static_prio);
+
+	if (current->policy == SCHED_NORMAL) {
+		/* set main_thread to highest normal priority */
+		set_user_nice(current, PRIO_TO_NICE(DEFAULT_PRIO - 19));
+	}
 	DBGLOG(INIT, INFO, "tx_thread starts running...\n");
+
+	DBGLOG(INIT, TRACE, "2. policy: %d, static_prio: %d",
+		current->policy, current->static_prio);
 
 	while (TRUE) {
 
@@ -4855,13 +4864,13 @@ VOID kalChangeSchedParams(P_GLUE_INFO_T prGlueInfo, BOOLEAN fgNormalThread)
 	if (prGlueInfo->main_thread && prGlueInfo->main_thread->policy != SCHED_NORMAL) {
 		sched_setscheduler(prGlueInfo->main_thread, SCHED_NORMAL, &param);
 		/* set main_thread to highest normal priority */
-		prGlueInfo->main_thread->static_prio = DEFAULT_PRIO - 19;
+		set_user_nice(prGlueInfo->main_thread, PRIO_TO_NICE(DEFAULT_PRIO - 19));
 	}
 #if CFG_SUPPORT_MULTITHREAD
 	if (prGlueInfo->rx_thread && prGlueInfo->rx_thread->policy != SCHED_NORMAL) {
 		sched_setscheduler(prGlueInfo->rx_thread, SCHED_NORMAL, &param);
 		/* set rx_thread to highest normal priority */
-		prGlueInfo->rx_thread->static_prio = DEFAULT_PRIO - 19;
+		set_user_nice(prGlueInfo->rx_thread, PRIO_TO_NICE(DEFAULT_PRIO - 19));
 	}
 #endif
 }
