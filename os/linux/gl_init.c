@@ -2346,6 +2346,11 @@ int set_p2p_mode_handler(struct net_device *netdev, PARAM_CUSTOM_P2P_SET_STRUCT_
 	BOOLEAN fgIsP2PEnding;
 	UINT_32 u4BufLen = 0;
 
+	if (prGlueInfo && prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(INIT, ERROR, "adapter is not ready\n");
+		return -1;
+	}
+
 	GLUE_SPIN_LOCK_DECLARATION();
 
 	DBGLOG(INIT, INFO, "%u %u\n", (UINT_32) p2pmode.u4Enable, (UINT_32) p2pmode.u4Mode);
