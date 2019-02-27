@@ -435,38 +435,36 @@ static void statsInfoEnvDisplay(GLUE_INFO_T *prGlueInfo, UINT8 *prInBuf, UINT32 
 #endif
 
 #if CFG_ENABLE_PER_STA_STATISTICS_LOG
-		if (prStaRec->aucMacAddr != NULL) {
-			UINT_32 u4LinkScore;
-			/* rQueryStaStatistics.u4TxFailCount + rQueryStaStatistics.u4TxLifeTimeoutCount; */
-			UINT_32 u4TotalError = prInfo->u4TxDataCntErr;
-			UINT_32 u4TxExceedThresholdCount = prStaRec->u4ThresholdCounter;
-			UINT_32 u4TxTotalCount = prStaRec->u4TotalTxPktsNumber;
+		UINT_32 u4LinkScore;
+		/* rQueryStaStatistics.u4TxFailCount + rQueryStaStatistics.u4TxLifeTimeoutCount; */
+		UINT_32 u4TotalError = prInfo->u4TxDataCntErr;
+		UINT_32 u4TxExceedThresholdCount = prStaRec->u4ThresholdCounter;
+		UINT_32 u4TxTotalCount = prStaRec->u4TotalTxPktsNumber;
 
-			if (u4TxTotalCount) {
-				if (u4TxExceedThresholdCount <= u4TxTotalCount)
-					u4LinkScore = (90 - ((u4TxExceedThresholdCount * 90) / u4TxTotalCount));
-				else
-					u4LinkScore = 0;
-			} else {
-				u4LinkScore = 90;
-			}
-			u4LinkScore += 10;
-			if (u4LinkScore == 10) {
-				if (u4TotalError <= u4TxTotalCount)
-					u4LinkScore = (10 - ((u4TotalError * 10) / u4TxTotalCount));
-				else
-					u4LinkScore = 0;
-			}
-			if (u4LinkScore > 100)
-				u4LinkScore = 100;
-
-			DBGLOG(RX, INFO, "<stats> link_score=%d for [%pM](%d)\n",
-						u4LinkScore, prStaRec->aucMacAddr, prStaRec->ucNetTypeIndex);
-
-			/* Reset statistics */
-			prStaRec->u4ThresholdCounter = 0;
-			prStaRec->u4TotalTxPktsNumber = 0;
+		if (u4TxTotalCount) {
+			if (u4TxExceedThresholdCount <= u4TxTotalCount)
+				u4LinkScore = (90 - ((u4TxExceedThresholdCount * 90) / u4TxTotalCount));
+			else
+				u4LinkScore = 0;
+		} else {
+			u4LinkScore = 90;
 		}
+		u4LinkScore += 10;
+		if (u4LinkScore == 10) {
+			if (u4TotalError <= u4TxTotalCount)
+				u4LinkScore = (10 - ((u4TotalError * 10) / u4TxTotalCount));
+			else
+				u4LinkScore = 0;
+		}
+		if (u4LinkScore > 100)
+			u4LinkScore = 100;
+
+		DBGLOG(RX, INFO, "<stats> link_score=%d for [%pM](%d)\n",
+					u4LinkScore, prStaRec->aucMacAddr, prStaRec->ucNetTypeIndex);
+
+		/* Reset statistics */
+		prStaRec->u4ThresholdCounter = 0;
+		prStaRec->u4TotalTxPktsNumber = 0;
 #endif
 
 		/* reset */
