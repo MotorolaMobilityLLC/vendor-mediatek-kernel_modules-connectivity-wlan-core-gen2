@@ -1436,6 +1436,11 @@ static int HifAhbBusCntClr(VOID)
 	HifTxCnt = 0;
 	return 0;
 }
+
+int __weak HifAhbSetMpuProtect(bool enable)
+{
+	return 0;
+}
 #endif /* MTK_WCN_SINGLE_MODULE */
 
 /*----------------------------------------------------------------------------*/
@@ -1537,6 +1542,7 @@ static int HifAhbPltmProbe(IN struct platform_device *PDev)
 		WmtCb.wlan_remove_cb = HifAhbRemove;
 		WmtCb.wlan_bus_cnt_get_cb = HifAhbBusCntGet;
 		WmtCb.wlan_bus_cnt_clr_cb = HifAhbBusCntClr;
+		WmtCb.wlan_emi_mpu_set_protection_cb = HifAhbSetMpuProtect;
 		mtk_wcn_wmt_wlan_reg(&WmtCb);
 	}
 #endif /* MTK_WCN_SINGLE_MODULE */

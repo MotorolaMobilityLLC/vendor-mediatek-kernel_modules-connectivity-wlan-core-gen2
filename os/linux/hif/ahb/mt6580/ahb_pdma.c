@@ -118,6 +118,16 @@ GL_HIF_DMA_OPS_T HifGdmaOps = {
 *                        P U B L I C   F U N C T I O N S
 ********************************************************************************
 */
+
+int HifAhbSetMpuProtect(bool enable)
+{
+	emi_mpu_set_region_protection(
+		gConEmiPhyBase, gConEmiPhyBase + 512 * 1024 - 1, 5,
+		SET_ACCESS_PERMISSON(FORBIDDEN, NO_PROTECTION, FORBIDDEN,
+				     enable ? FORBIDDEN : NO_PROTECTION));
+	return 0;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
 * \brief Config GDMA TX/RX.
@@ -140,8 +150,7 @@ VOID HifPdmaInit(GL_HIF_INFO_T *HifInfo)
 	/* WIFI using TOP 512KB */
 	DBGLOG(HAL, TRACE, "[wlan] MPU region 5, 0x%08x - 0x%08x\n", (UINT_32) gConEmiPhyBase,
 	       (UINT_32) (gConEmiPhyBase + 512 * 1024));
-	emi_mpu_set_region_protection(gConEmiPhyBase, gConEmiPhyBase + 512 * 1024 - 1, 5,
-				      SET_ACCESS_PERMISSON(FORBIDDEN, NO_PROTECTION, FORBIDDEN, FORBIDDEN));
+	HifAhbSetMpuProtect(true);
 #if !defined(CONFIG_MTK_CLKMGR)
 	g_clk_wifi_pdma = HifInfo->clk_wifi_dma;
 #endif

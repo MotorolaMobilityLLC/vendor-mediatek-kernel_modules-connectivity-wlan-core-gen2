@@ -160,6 +160,23 @@ GL_HIF_DMA_OPS_T HifPdmaOps = {
 ********************************************************************************
 */
 
+int HifAhbSetMpuProtect(bool enable)
+{
+	struct emi_region_info_t region_info;
+
+	region_info.start = gConEmiPhyBase;
+	region_info.end = gConEmiPhyBase + 512 * 1024 - 1;
+	region_info.region = 23;
+	SET_ACCESS_PERMISSION(region_info.apc, UNLOCK,
+			      FORBIDDEN, FORBIDDEN, FORBIDDEN, FORBIDDEN,
+			      FORBIDDEN, FORBIDDEN, FORBIDDEN, FORBIDDEN,
+			      FORBIDDEN, FORBIDDEN, FORBIDDEN, FORBIDDEN,
+			      FORBIDDEN, NO_PROTECTION, FORBIDDEN,
+			      enable ? FORBIDDEN : NO_PROTECTION);
+	emi_mpu_set_protection(&region_info);
+	return 0;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
 * \brief Config PDMA TX/RX.
@@ -172,8 +189,6 @@ GL_HIF_DMA_OPS_T HifPdmaOps = {
 /*----------------------------------------------------------------------------*/
 VOID HifPdmaInit(GL_HIF_INFO_T *HifInfo)
 {
-	struct emi_region_info_t region_info;
-
 	/* IO remap PDMA register memory */
 	HifInfo->DmaRegBaseAddr = ioremap(AP_DMA_HIF_BASE, AP_DMA_HIF_0_LENGTH);
 
@@ -194,16 +209,7 @@ VOID HifPdmaInit(GL_HIF_INFO_T *HifInfo)
 	/* WIFI using TOP 512KB */
 	DBGLOG(INIT, INFO, "[wlan] MPU region 23, 0x%08x - 0x%08x\n", (UINT_32) gConEmiPhyBase,
 	       (UINT_32) (gConEmiPhyBase + 512 * 1024));
-
-	region_info.start = gConEmiPhyBase;
-	region_info.end = gConEmiPhyBase + 512 * 1024 - 1;
-	region_info.region = 23;
-	SET_ACCESS_PERMISSION(region_info.apc, UNLOCK,
-		FORBIDDEN, FORBIDDEN, FORBIDDEN, FORBIDDEN,
-		FORBIDDEN, FORBIDDEN, FORBIDDEN, FORBIDDEN,
-		FORBIDDEN, FORBIDDEN, FORBIDDEN, FORBIDDEN,
-		FORBIDDEN, NO_PROTECTION, FORBIDDEN, FORBIDDEN);
-	emi_mpu_set_protection(&region_info);
+	HifAhbSetMpuProtect(true);
 
 #if !defined(CONFIG_MTK_CLKMGR)
 	g_clk_wifi_pdma = HifInfo->clk_wifi_dma;

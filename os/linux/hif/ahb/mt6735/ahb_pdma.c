@@ -157,6 +157,19 @@ GL_HIF_DMA_OPS_T HifPdmaOps = {
 ********************************************************************************
 */
 
+#if defined(CONFIG_ARCH_MT6735) || defined(CONFIG_ARCH_MT6753)
+int HifAhbSetMpuProtect(bool enable)
+{
+	emi_mpu_set_region_protection(
+		gConEmiPhyBase, gConEmiPhyBase + 512 * 1024 - 1, 12,
+		SET_ACCESS_PERMISSON(FORBIDDEN, FORBIDDEN, FORBIDDEN,
+				     FORBIDDEN, FORBIDDEN,
+				     NO_PROTECTION, FORBIDDEN,
+				     enable ? FORBIDDEN : NO_PROTECTION));
+	return 0;
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
 * \brief Config PDMA TX/RX.
@@ -183,11 +196,7 @@ VOID HifPdmaInit(GL_HIF_INFO_T *HifInfo)
 	       (UINT_32) (gConEmiPhyBase + 512 * 1024));
 #if defined(CONFIG_ARCH_MT6735) || defined(CONFIG_ARCH_MT6753)
 	/* for MT6735M, we share region with wmt due to not enough region to use */
-	emi_mpu_set_region_protection(gConEmiPhyBase,
-				      gConEmiPhyBase + 512 * 1024 - 1,
-				      12,
-				      SET_ACCESS_PERMISSON(FORBIDDEN, FORBIDDEN, FORBIDDEN, FORBIDDEN, FORBIDDEN,
-							   NO_PROTECTION, FORBIDDEN, FORBIDDEN));
+	HifAhbSetMpuProtect(true);
 #endif
 
 #if !defined(CONFIG_MTK_CLKMGR)
