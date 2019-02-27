@@ -1558,6 +1558,11 @@ static VOID p2pFsmDeauthComplete(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prS
 			(p2pFuncIsAPMode(prP2pFsmInfo) == FALSE)) {
 			DBGLOG(P2P, WARN, "Skip deauth tx done since AAA fsm is in progress.\n");
 			break;
+		} else if (prStaRec->eAuthAssocState == SAA_STATE_SEND_AUTH1 ||
+			prStaRec->eAuthAssocState == SAA_STATE_SEND_ASSOC1) {
+			DBGLOG(P2P, WARN,
+				"Skip deauth tx done since SAA fsm is in progress.\n");
+			return;
 		}
 
 		if ((prP2pBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT) &&
