@@ -326,7 +326,10 @@ typedef UINT_32 KAL_WAKE_LOCK_T, *P_KAL_WAKE_LOCK_T;
 		pvAddr = kmalloc(u4Size, GFP_KERNEL); \
 	} \
 	else { \
-		pvAddr = vmalloc(u4Size); \
+		if (u4Size > PAGE_SIZE) \
+			pvAddr = vmalloc(u4Size); \
+		else \
+			pvAddr = kmalloc(u4Size, GFP_KERNEL); \
 	} \
 	if (pvAddr) {   \
 		allocatedMemSize += u4Size;   \
@@ -342,7 +345,10 @@ typedef UINT_32 KAL_WAKE_LOCK_T, *P_KAL_WAKE_LOCK_T;
 		pvAddr = kmalloc(u4Size, GFP_KERNEL); \
 	} \
 	else { \
-		pvAddr = vmalloc(u4Size); \
+		if (u4Size > PAGE_SIZE) \
+			pvAddr = vmalloc(u4Size); \
+		else \
+			pvAddr = kmalloc(u4Size, GFP_KERNEL); \
 	} \
 	pvAddr; \
 })
@@ -367,22 +373,12 @@ typedef UINT_32 KAL_WAKE_LOCK_T, *P_KAL_WAKE_LOCK_T;
 		DBGLOG(INIT, INFO, "%p(%u) freed (%s:%s)\n", \
 			pvAddr, (UINT_32)u4Size, __FILE__, __func__);  \
 	} \
-	if (eMemType == PHY_MEM_TYPE) { \
-		kfree(pvAddr); \
-	} \
-	else { \
-		vfree(pvAddr); \
-	} \
+	kvfree(pvAddr); \
 }
 #else
 #define kalMemFree(pvAddr, eMemType, u4Size) \
 {   \
-	if (eMemType == PHY_MEM_TYPE) { \
-		kfree(pvAddr); \
-	} \
-	else { \
-		vfree(pvAddr); \
-	} \
+	kvfree(pvAddr); \
 }
 #endif
 
