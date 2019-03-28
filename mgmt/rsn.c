@@ -1008,18 +1008,14 @@ BOOLEAN rsnPerformPolicySelection(IN P_ADAPTER_T prAdapter, IN P_BSS_DESC_T prBs
 			prAdapter->rWifiVar.rAisSpecificBssInfo.fgMgmtProtection = FALSE;
 		}
 	} else {
-		if (prBssRsnInfo->fgRsnCapPresent && prBssRsnInfo->u2RsnCap) {
-			if (prBssRsnInfo->u2RsnCap & ELEM_WPA_CAP_MFPC) {
-				prAdapter->rWifiVar.rAisSpecificBssInfo.fgMgmtProtection = TRUE;
-				prAdapter->prGlueInfo->rWpaInfo.u4Mfp = RSN_AUTH_MFP_OPTIONAL;
-			} else
-				prAdapter->rWifiVar.rAisSpecificBssInfo.fgMgmtProtection = FALSE;
-		}
-	}
-	if (prBssRsnInfo->fgRsnCapPresent && (prBssRsnInfo->u2RsnCap & ELEM_WPA_CAP_MFPR)) {
-		if (prAdapter->rWifiVar.rAisSpecificBssInfo.fgMgmtProtection == FALSE) {
-			DBGLOG(RSN, TRACE, "[MFP] Skip RSN IE, No MFP Required Capability\n");
-			return FALSE;
+		if (prBssRsnInfo->fgRsnCapPresent &&
+		    (prBssRsnInfo->u2RsnCap & ELEM_WPA_CAP_MFPR)) {
+			if (prAdapter->rWifiVar.rAisSpecificBssInfo
+			    .fgMgmtProtection == FALSE) {
+				DBGLOG(RSN, TRACE,
+				       "[MFP] Skip RSN IE, No MFP Required Capability\n");
+				return FALSE;
+			}
 		}
 	}
 	DBGLOG(RSN, TRACE, "fgMgmtProtection = %d\n ", prAdapter->rWifiVar.rAisSpecificBssInfo.fgMgmtProtection);
