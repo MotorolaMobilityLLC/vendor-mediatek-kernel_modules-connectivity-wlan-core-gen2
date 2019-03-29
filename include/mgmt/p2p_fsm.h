@@ -140,6 +140,7 @@ typedef struct _P2P_SCAN_REQ_INFO_T {
 	UINT_8 aucIEBuf[MAX_IE_LENGTH];
 	P2P_SSID_STRUCT_T rSsidStruct;	/* Currently we can only take one SSID scan request */
 	BOOLEAN fgIsGOInitialDone;
+	u_int8_t fgIsAcsReq;
 } P2P_SCAN_REQ_INFO_T, *P_P2P_SCAN_REQ_INFO_T;
 
 typedef struct _P2P_CONNECTION_REQ_INFO_T {
@@ -251,6 +252,32 @@ struct _WFD_DBG_CFG_SETTINGS_T {
 
 #endif
 
+enum P2P_VENDOR_ACS_HW_MODE {
+	P2P_VENDOR_ACS_HW_MODE_11B,
+	P2P_VENDOR_ACS_HW_MODE_11G,
+	P2P_VENDOR_ACS_HW_MODE_11A,
+	P2P_VENDOR_ACS_HW_MODE_11AD,
+	P2P_VENDOR_ACS_HW_MODE_11ANY
+};
+
+struct P2P_ACS_REQ_INFO {
+	u_int8_t fgIsProcessing;
+	u_int8_t fgIsHtEnable;
+	u_int8_t fgIsHt40Enable;
+	u_int8_t fgIsVhtEnable;
+	enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw;
+	enum P2P_VENDOR_ACS_HW_MODE eHwMode;
+	uint32_t u4LteSafeChnMask_2G;
+	uint32_t u4LteSafeChnMask_5G_1;
+	uint32_t u4LteSafeChnMask_5G_2;
+
+	/* output only */
+	uint8_t ucPrimaryCh;
+	uint8_t ucSecondCh;
+	uint8_t ucCenterFreqS1;
+	uint8_t ucCenterFreqS2;
+};
+
 struct _P2P_FSM_INFO_T {
 	/* State related. */
 	ENUM_P2P_STATE_T ePreviousState;
@@ -271,6 +298,9 @@ struct _P2P_FSM_INFO_T {
 
 	/* Mgmt tx related. */
 	P2P_MGMT_TX_REQ_INFO_T rMgmtTxInfo;
+
+	/* Auto channel selection related. */
+	struct P2P_ACS_REQ_INFO rAcsReqInfo;
 
 	/* Beacon related. */
 	P2P_BEACON_UPDATE_INFO_T rBcnContentInfo;
@@ -329,6 +359,7 @@ typedef struct _MSG_P2P_SCAN_REQUEST_T {
 	PUINT_8 pucIEBuf;
 	UINT_32 u4IELen;
 	BOOLEAN fgIsAbort;
+	u_int8_t fgIsAcsReq;
 	RF_CHANNEL_INFO_T arChannelListInfo[1];
 } MSG_P2P_SCAN_REQUEST_T, *P_MSG_P2P_SCAN_REQUEST_T;
 
@@ -440,6 +471,17 @@ typedef struct _MSG_WFD_CONFIG_SETTINGS_CHANGED_T {
 	P_WFD_CFG_SETTINGS_T prWfdCfgSettings;
 } MSG_WFD_CONFIG_SETTINGS_CHANGED_T, *P_MSG_WFD_CONFIG_SETTINGS_CHANGED_T;
 #endif
+
+struct MSG_P2P_ACS_REQUEST {
+	MSG_HDR_T rMsgHdr; /* Must be the first member */
+	BOOLEAN fgIsHtEnable;
+	BOOLEAN fgIsHt40Enable;
+	BOOLEAN fgIsVhtEnable;
+	enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw;
+	enum P2P_VENDOR_ACS_HW_MODE eHwMode;
+	UINT_32 u4NumChannel;
+	RF_CHANNEL_INFO_T arChannelListInfo[1];
+};
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
@@ -1817,5 +1859,10 @@ VOID p2pFsmNotifyTxStatus(IN P_ADAPTER_T prAdapter, UINT_8 *pucEvtBuf);
 VOID p2pFsmNotifyRxP2pActionFrame(IN P_ADAPTER_T prAdapter,
 		IN enum P2P_ACTION_FRAME_TYPE eP2pFrameType,
 		OUT u_int8_t *prFgBufferFrame);
+
+void p2pFsmRunEventAcs(IN P_ADAPTER_T prAdapter,
+		IN P_MSG_HDR_T prMsgHdr);
+
+u_int8_t p2pFsmIsAcsProcessing(IN P_ADAPTER_T prAdapter);
 
 #endif /* _P2P_FSM_H */

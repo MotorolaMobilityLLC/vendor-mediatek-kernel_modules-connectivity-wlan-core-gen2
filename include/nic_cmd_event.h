@@ -1493,14 +1493,12 @@ typedef struct _CMD_HOTSPOT_OPTIMIZATION_CONFIG {
 } CMD_HOTSPOT_OPTIMIZATION_CONFIG, *P_HOTSPOT_OPTIMIZATION_CONFIG;
 #endif
 
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
 typedef struct _EVENT_LTE_SAFE_CHN_T {
 	UINT_8 ucVersion;
 	UINT_8 aucReserved[3];
 	UINT_32 u4Flags;	/* Bit0: valid */
 	LTE_SAFE_CHN_INFO_T rLteSafeChn;
 } EVENT_LTE_SAFE_CHN_T, *P_EVENT_LTE_SAFE_CHN_T;
-#endif
 
 typedef struct _CMD_ROAMING_INFO_T {
 	UINT_32 fgIsFastRoamingApplied;
@@ -1890,9 +1888,7 @@ VOID nicCmdEventBuildDateCode(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInf
 
 VOID nicCmdEventQueryStaStatistics(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf);
 
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
 VOID nicCmdEventQueryLteSafeChn(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf);
-#endif
 
 #if CFG_SUPPORT_BATCH_SCAN
 VOID nicCmdEventBatchScanResult(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf);

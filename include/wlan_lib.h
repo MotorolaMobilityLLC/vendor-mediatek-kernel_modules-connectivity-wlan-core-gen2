@@ -399,6 +399,15 @@ typedef enum _ENUM_BAND_EDGE_CERT_T {
 	BAND_EDGE_CERT_NUM = 2
 } ENUM_BAND_EDGE_CERT_T, *P_ENUM_BAND_EDGE_CERT_T;
 
+enum ENUM_MAX_BANDWIDTH_SETTING {
+	MAX_BW_20MHZ = 0,
+	MAX_BW_40MHZ,
+	MAX_BW_80MHZ,
+	MAX_BW_160MHZ,
+	MAX_BW_80_80_MHZ,
+	MAX_BW_UNKNOWN
+};
+
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -677,4 +686,10 @@ extern VOID mtk_wcn_wmt_set_wifi_ver(UINT_32 Value);
 VOID wlanReleasePendingCmdById(P_ADAPTER_T prAdapter, UINT_8 ucCid);
 
 UINT_32 wlanDecimalStr2Hexadecimals(PUINT_8 pucDecimalStr, PUINT_16 pu2Out);
+
+WLAN_STATUS wlanQueryLteSafeChannel(IN P_ADAPTER_T prAdapter);
+
+uint8_t
+wlanGetChannelIndex(IN uint8_t channel);
+
 #endif /* _WLAN_LIB_H */

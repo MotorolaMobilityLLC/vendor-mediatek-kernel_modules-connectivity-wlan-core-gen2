@@ -2076,27 +2076,6 @@ VOID scanReportBss2Cfg80211(IN P_ADAPTER_T prAdapter, IN ENUM_BSS_TYPE_T eBSSTyp
 		prBSSDescList = &(prAdapter->rWifiVar.rScanInfo.rBSSDescList);
 
 		LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList, rLinkEntry, BSS_DESC_T) {
-
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
-			/* Record channel loading with channel's AP number */
-			UINT_8 ucIdx = 0;
-
-			if (prBssDesc->ucChannelNum <= 14)
-				ucIdx = prBssDesc->ucChannelNum - 1;
-			else if (prBssDesc->ucChannelNum >= 36 && prBssDesc->ucChannelNum <= 64)
-				ucIdx = 14 + (prBssDesc->ucChannelNum - 36) / 4;
-			else if (prBssDesc->ucChannelNum >= 100 && prBssDesc->ucChannelNum <= 144)
-				ucIdx = 14 + 8 + (prBssDesc->ucChannelNum - 100) / 4;
-			else if (prBssDesc->ucChannelNum >= 149)
-				ucIdx = 14 + 8 + 12 + (prBssDesc->ucChannelNum - 149) / 4;
-
-			if (ucIdx < MAX_CHN_NUM) {
-				prAdapter->rWifiVar.rChnLoadInfo.rEachChnLoad[ucIdx].ucChannel =
-					prBssDesc->ucChannelNum;
-				prAdapter->rWifiVar.rChnLoadInfo.rEachChnLoad[ucIdx].u2APNum++;
-			}
-#endif
-
 			/* Check BSSID is legal channel */
 			if (!scanCheckBssIsLegal(prAdapter, prBssDesc)) {
 				DBGLOG(SCN, TRACE, "Remove SSID[%s] on channel %d\n",
@@ -2164,10 +2143,6 @@ VOID scanReportBss2Cfg80211(IN P_ADAPTER_T prAdapter, IN ENUM_BSS_TYPE_T eBSSTyp
 				}
 			}
 		}
-
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
-		prAdapter->rWifiVar.rChnLoadInfo.fgDataReadyBit = TRUE;
-#endif
 	}
 	wlanDebugScanTargetBSSDump(prAdapter);
 }
@@ -2546,7 +2521,6 @@ static WLAN_STATUS __scanProcessBeaconAndProbeResp(IN P_ADAPTER_T prAdapter, IN 
 #if CFG_SLT_SUPPORT
 	P_SLT_INFO_T prSltInfo = (P_SLT_INFO_T) NULL;
 #endif
-	BOOLEAN fgAddToScanResult = FALSE;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
@@ -2694,7 +2668,7 @@ static WLAN_STATUS __scanProcessBeaconAndProbeResp(IN P_ADAPTER_T prAdapter, IN 
 		if (prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE || prBssDesc->eBSSType == BSS_TYPE_IBSS) {
 			/* for AIS, send to host */
 			prAdapter->rWlanInfo.u4ScanDbgTimes3++;
-
+			BOOLEAN fgAddToScanResult = FALSE;
 
 			if (prConnSettings->fgIsScanReqIssued || prAdapter->rWifiVar.rScanInfo.fgNloScanning
 #if CFG_SUPPORT_SCN_PSCN
