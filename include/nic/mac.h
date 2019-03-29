@@ -827,11 +827,6 @@
 #define ELEM_RM_TYPE_STA_STATISTICS_REPORT          7
 #define ELEM_RM_TYPE_LCI_REPORT                     8
 #define ELEM_RM_TYPE_TSM_REPORT                      9
-/*Auto Channel Selection*/
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
-#define ELEM_RM_TYPE_ACS_CHN			    1
-#define ELEM_RM_TYPE_LTE_CHN			    2
-#endif
 
 /* 7.3.2.25 RSN information element */
 #define ELEM_MAX_LEN_WPA                            34	/* one pairwise, one AKM suite, one PMKID */

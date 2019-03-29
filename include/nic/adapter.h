@@ -574,9 +574,9 @@ typedef struct _WIFI_VAR_T {
 #if CFG_SUPPORT_HOTSPOT_2_0
 	HS20_INFO_T rHS20Info;
 #endif
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
+
 	PARAM_GET_CHN_INFO rChnLoadInfo;
-#endif
+
 #if CFG_RX_BA_REORDERING_ENHANCEMENT
 	BOOLEAN fgEnableReportIndependentPkt;
 #endif

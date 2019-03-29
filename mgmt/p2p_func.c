@@ -4078,3 +4078,346 @@ void p2pFunCleanQueuedMgmtFrame(IN P_ADAPTER_T prAdapter,
 	prFrame->prHeader = NULL;
 }
 
+uint8_t p2pFunGetSecCh(IN P_ADAPTER_T prAdapter,
+		IN ENUM_BAND_T eBand,
+		IN ENUM_CHNL_EXT_T eSCO,
+		IN uint8_t ucPrimaryCh)
+{
+	uint8_t ucSecondCh;
+
+	if (eSCO == CHNL_EXT_SCN)
+		return 0;
+
+	if (eSCO == CHNL_EXT_SCA)
+		ucSecondCh = ucPrimaryCh + CHNL_SPAN_20;
+	else
+		ucSecondCh = ucPrimaryCh - CHNL_SPAN_20;
+
+	if (!rlmDomainIsLegalChannel(prAdapter, eBand, ucSecondCh))
+		ucSecondCh = 0;
+
+	return ucSecondCh;
+}
+
+ENUM_CHNL_EXT_T p2pFunGetSco(IN P_ADAPTER_T prAdapter,
+		ENUM_BAND_T eBand, uint8_t ucPrimaryCh) {
+	ENUM_CHNL_EXT_T eSCO = CHNL_EXT_SCN;
+
+	if (eBand == BAND_2G4) {
+		if (ucPrimaryCh != 14)
+			eSCO = (ucPrimaryCh > 7) ? CHNL_EXT_SCB : CHNL_EXT_SCA;
+	} else {
+		P_DOMAIN_INFO_ENTRY prDomainInfo = rlmDomainGetDomainInfo(
+				prAdapter);
+		P_DOMAIN_SUBBAND_INFO prSubband;
+		uint8_t i, j;
+
+		for (i = 0; i < MAX_SUBBAND_NUM; i++) {
+			prSubband = &prDomainInfo->rSubBand[i];
+			if (prSubband->ucBand != eBand)
+				continue;
+			for (j = 0; j < prSubband->ucNumChannels; j++) {
+				if ((prSubband->ucFirstChannelNum +
+					j * prSubband->ucChannelSpan) ==
+					ucPrimaryCh) {
+					eSCO = (j & 1) ?
+						CHNL_EXT_SCB :
+						CHNL_EXT_SCA;
+					break;
+				}
+			}
+
+			if (j < prSubband->ucNumChannels)
+				break;	/* Found */
+		}
+	}
+
+	return eSCO;
+}
+
+void p2pFunIndicateAcsResult(IN P_GLUE_INFO_T prGlueInfo,
+		IN struct P2P_ACS_REQ_INFO *prAcsReqInfo)
+{
+	if (prAcsReqInfo->ucPrimaryCh == 0) {
+		if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11B ||
+				prAcsReqInfo->eHwMode ==
+					P2P_VENDOR_ACS_HW_MODE_11G) {
+			prAcsReqInfo->ucPrimaryCh = AP_DEFAULT_CHANNEL_2G;
+		} else {
+			prAcsReqInfo->ucPrimaryCh = AP_DEFAULT_CHANNEL_5G;
+		}
+		DBGLOG(P2P, WARN, "No chosed channel, use default channel %d\n",
+				prAcsReqInfo->ucPrimaryCh);
+	}
+
+	if (prAcsReqInfo->eChnlBw > MAX_BW_20MHZ) {
+		ENUM_BAND_T eBand;
+		ENUM_CHNL_EXT_T eSCO;
+
+		eBand = prAcsReqInfo->ucPrimaryCh <= 14 ? BAND_2G4 : BAND_5G;
+		eSCO = p2pFunGetSco(prGlueInfo->prAdapter,
+				eBand,
+				prAcsReqInfo->ucPrimaryCh);
+
+		prAcsReqInfo->ucSecondCh = p2pFunGetSecCh(
+				prGlueInfo->prAdapter,
+				eBand,
+				eSCO,
+				prAcsReqInfo->ucPrimaryCh);
+	}
+
+	prAcsReqInfo->ucCenterFreqS1 = 0;
+	prAcsReqInfo->ucCenterFreqS2 = 0;
+
+	prAcsReqInfo->fgIsProcessing = FALSE;
+	kalP2pIndicateAcsResult(prGlueInfo,
+			prAcsReqInfo->ucPrimaryCh,
+			prAcsReqInfo->ucSecondCh,
+			prAcsReqInfo->ucCenterFreqS1,
+			prAcsReqInfo->ucCenterFreqS2,
+			prAcsReqInfo->eChnlBw);
+}
+
+uint8_t p2pFunGetAcsBestCh(IN P_ADAPTER_T prAdapter,
+		IN ENUM_BAND_T eBand,
+		IN enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw,
+		IN uint32_t u4LteSafeChnMask_2G,
+		IN uint32_t u4LteSafeChnMask_5G_1,
+		IN uint32_t u4LteSafeChnMask_5G_2)
+{
+	RF_CHANNEL_INFO_T aucChannelList[MAX_CHN_NUM];
+	uint8_t ucNumOfChannel;
+	P_PARAM_GET_CHN_INFO prGetChnLoad;
+	uint8_t i;
+	PARAM_PREFER_CHN_INFO rPreferChannel = { 0, 0xFFFF, 0 };
+
+	rlmDomainGetChnlList(prAdapter, eBand, TRUE, MAX_CHN_NUM,
+			&ucNumOfChannel, aucChannelList);
+
+	/*
+	 * 2. Calculate each channel's dirty score
+	 */
+	prGetChnLoad = &(prAdapter->rWifiVar.rChnLoadInfo);
+
+	DBGLOG(P2P, INFO, "2g mask=0x%08x\n", u4LteSafeChnMask_2G);
+	DBGLOG(P2P, INFO, "5g_1 mask=0x%08x\n", u4LteSafeChnMask_5G_1);
+	DBGLOG(P2P, INFO, "5g_2 mask=0x%08x\n", u4LteSafeChnMask_5G_2);
+
+	for (i = 0; i < ucNumOfChannel; i++) {
+		uint8_t ucIdx;
+		P_PARAM_CHN_LOAD_INFO prEachChnLoad;
+
+		ucIdx = wlanGetChannelIndex(aucChannelList[i].ucChannelNum);
+		prEachChnLoad = &prGetChnLoad->rEachChnLoad[ucIdx];
+
+		DBGLOG(P2P, INFO, "idx: %u, ch: %u, s: %d\n",
+				ucIdx,
+				aucChannelList[i].ucChannelNum,
+				prEachChnLoad->u2APNumScore);
+
+		if (aucChannelList[i].ucChannelNum <= 14) {
+			if (!(u4LteSafeChnMask_2G & BIT(
+					aucChannelList[i].ucChannelNum)))
+				continue;
+		} else if ((aucChannelList[i].ucChannelNum >= 36) &&
+				(aucChannelList[i].ucChannelNum <= 144)) {
+			if (!(u4LteSafeChnMask_5G_1 & BIT(
+				(aucChannelList[i].ucChannelNum - 36) / 4)))
+				continue;
+		} else if ((aucChannelList[i].ucChannelNum >= 149) &&
+				(aucChannelList[i].ucChannelNum <= 181)) {
+			if (!(u4LteSafeChnMask_5G_2 & BIT(
+				(aucChannelList[i].ucChannelNum - 149) / 4)))
+				continue;
+		}
+
+		if (rPreferChannel.u2APNumScore > prEachChnLoad->u2APNumScore) {
+			rPreferChannel.u2APNumScore =
+				prEachChnLoad->u2APNumScore;
+			rPreferChannel.ucChannel =
+				prEachChnLoad->ucChannel;
+		}
+	}
+
+	return rPreferChannel.ucChannel;
+}
+
+void p2pFunProcessAcsReport(IN P_ADAPTER_T prAdapter,
+		IN P_PARAM_GET_CHN_INFO prLteSafeChnInfo,
+		IN struct P2P_ACS_REQ_INFO *prAcsReqInfo)
+{
+	ENUM_BAND_T eBand;
+	uint32_t u4LteSafeChnMask_2G = -1;
+
+	if (!prAdapter || !prAcsReqInfo)
+		return;
+
+	if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11B ||
+			prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11G)
+		eBand = BAND_2G4;
+	else
+		eBand = BAND_5G;
+
+	if (prLteSafeChnInfo && (eBand == BAND_2G4)) {
+		P_CMD_LTE_SAFE_CHN_INFO_T prLteSafeChnList;
+		RF_CHANNEL_INFO_T aucChannelList[MAX_2G_BAND_CHN_NUM];
+		uint8_t ucNumOfChannel;
+		uint8_t i;
+		u_int8_t fgIsMaskValid = FALSE;
+
+		rlmDomainGetChnlList(prAdapter, eBand, TRUE,
+			MAX_2G_BAND_CHN_NUM, &ucNumOfChannel, aucChannelList);
+
+		prLteSafeChnList = &prLteSafeChnInfo->rLteSafeChnList;
+		u4LteSafeChnMask_2G = prLteSafeChnList->au4SafeChannelBitmask[
+			NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_2G_BASE_1 - 1];
+
+#if CFG_TC1_FEATURE
+		/* Restrict 2.4G band channel selection range
+		 * to 1/6/11 per customer's request
+		 */
+		u4LteSafeChnMask_2G &= 0x0842;
+#elif CFG_TC10_FEATURE
+		/* Restrict 2.4G band channel selection range
+		 * to 1~11 per customer's request
+		 */
+		u4LteSafeChnMask_2G &= 0x0FFE;
+#endif
+		prAcsReqInfo->u4LteSafeChnMask_2G &= u4LteSafeChnMask_2G;
+		for (i = 0; i < ucNumOfChannel; i++) {
+			if ((prAcsReqInfo->u4LteSafeChnMask_2G & BIT(
+					aucChannelList[i].ucChannelNum))) {
+				fgIsMaskValid = TRUE;
+				break;
+			}
+		}
+		if (!fgIsMaskValid) {
+			DBGLOG(P2P, WARN,
+				"All mask invalid, mark all as valid\n");
+			prAcsReqInfo->u4LteSafeChnMask_2G = BITS(1, 14);
+		}
+	}
+
+	prAcsReqInfo->ucPrimaryCh = p2pFunGetAcsBestCh(prAdapter,
+			eBand,
+			prAcsReqInfo->eChnlBw,
+			prAcsReqInfo->u4LteSafeChnMask_2G,
+			prAcsReqInfo->u4LteSafeChnMask_5G_1,
+			prAcsReqInfo->u4LteSafeChnMask_5G_2);
+
+	p2pFunIndicateAcsResult(prAdapter->prGlueInfo,
+			prAcsReqInfo);
+}
+
+void p2pFunCalAcsChnScores(IN P_ADAPTER_T prAdapter,
+		IN ENUM_BAND_T eBand)
+{
+	UINT_8 ucNumOfChannel;
+	RF_CHANNEL_INFO_T aucChannelList[MAX_CHN_NUM];
+	P_PARAM_GET_CHN_INFO prGetChnLoad;
+	UINT_8 i, ucIdx;
+
+	if (!prAdapter)
+		return;
+
+	prGetChnLoad = &(prAdapter->rWifiVar.rChnLoadInfo);
+
+	if (eBand == BAND_2G4) {
+		P_LINK_T prBSSDescList = (P_LINK_T) NULL;
+		P_BSS_DESC_T prBssDesc = (P_BSS_DESC_T) NULL;
+		UINT_16 u2APNumScore = 0, u2UpThreshold = 0;
+		UINT_16 u2LowThreshold = 0, ucInnerIdx = 0;
+
+		prBSSDescList = &(prAdapter->rWifiVar.rScanInfo.rBSSDescList);
+
+		LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList, rLinkEntry,
+				BSS_DESC_T) {
+			/* Record channel loading with channel's AP number */
+			UINT_8 ucIdx = 0;
+
+			if (prBssDesc->eBand != eBand)
+				continue;
+			ucIdx = wlanGetChannelIndex(prBssDesc->ucChannelNum);
+			if (ucIdx >= MAX_CHN_NUM)
+				continue;
+			prGetChnLoad->rEachChnLoad[ucIdx].u2APNum++;
+		}
+
+		rlmDomainGetChnlList(prAdapter,
+				BAND_2G4,
+				TRUE,
+				MAX_2G_BAND_CHN_NUM,
+				&ucNumOfChannel,
+				aucChannelList);
+
+#define CHN_DIRTY_WEIGHT_UPPERBOUND 4
+		for (i = 0; i < ucNumOfChannel; i++) {
+			P_PARAM_CHN_LOAD_INFO prEachChnLoad;
+
+			ucIdx = wlanGetChannelIndex(
+					aucChannelList[i].ucChannelNum);
+
+			if (ucIdx >= MAX_CHN_NUM)
+				continue;
+
+			prEachChnLoad = &prGetChnLoad->rEachChnLoad[ucIdx];
+
+			/* Current channel's dirty score */
+			u2APNumScore = prEachChnLoad->u2APNum *
+					CHN_DIRTY_WEIGHT_UPPERBOUND;
+			u2LowThreshold = u2UpThreshold = 3;
+
+			if (ucIdx < 3) {
+				u2LowThreshold = ucIdx;
+				u2UpThreshold = 3;
+			} else if (ucIdx >= (ucNumOfChannel - 3)) {
+				u2LowThreshold = 3;
+				u2UpThreshold = ucNumOfChannel - (ucIdx + 1);
+			}
+
+			/* Lower channel's dirty score */
+			for (ucInnerIdx = 0; ucInnerIdx < u2LowThreshold;
+					ucInnerIdx++) {
+				u2APNumScore += (prGetChnLoad->rEachChnLoad[ucIdx - ucInnerIdx - 1].u2APNum *
+					(CHN_DIRTY_WEIGHT_UPPERBOUND - 1 - ucInnerIdx));
+			}
+
+			/* Upper channel's dirty score */
+			for (ucInnerIdx = 0; ucInnerIdx < u2UpThreshold;
+					ucInnerIdx++) {
+				u2APNumScore +=
+					(prGetChnLoad->rEachChnLoad[ucIdx + ucInnerIdx + 1].u2APNum *
+					(CHN_DIRTY_WEIGHT_UPPERBOUND - 1 - ucInnerIdx));
+			}
+
+			prEachChnLoad->u2APNumScore = u2APNumScore;
+			prEachChnLoad->ucChannel =
+					aucChannelList[i].ucChannelNum;
+		}
+	} else {
+		rlmDomainGetChnlList(prAdapter,
+				BAND_5G,
+				TRUE,
+				MAX_CHN_NUM - MAX_2G_BAND_CHN_NUM,
+				&ucNumOfChannel,
+				aucChannelList);
+
+		for (i = 0; i < ucNumOfChannel; i++) {
+			P_PARAM_CHN_LOAD_INFO prEachChnLoad;
+
+			ucIdx = wlanGetChannelIndex(
+					aucChannelList[i].ucChannelNum);
+
+			if (ucIdx >= MAX_CHN_NUM)
+				continue;
+
+			prEachChnLoad = &prGetChnLoad->rEachChnLoad[ucIdx];
+			get_random_bytes(&prEachChnLoad->u2APNumScore,
+					sizeof(UINT_16));
+			prEachChnLoad->u2APNumScore %= 100;
+			prEachChnLoad->ucChannel =
+					aucChannelList[i].ucChannelNum;
+		}
+	}
+}
+

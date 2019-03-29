@@ -5850,3 +5850,65 @@ integer_part:
 	return u4Ret;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief This routine is called to query LTE safe channels.
+*
+* \param[in]  pvAdapter        Pointer to the Adapter structure.
+*
+* \retval WLAN_STATUS_SUCCESS
+* \retval WLAN_STATUS_FAILURE
+*/
+/*----------------------------------------------------------------------------*/
+WLAN_STATUS wlanQueryLteSafeChannel(IN P_ADAPTER_T prAdapter)
+{
+	WLAN_STATUS rResult = WLAN_STATUS_FAILURE;
+	PARAM_GET_CHN_INFO rQueryLteChn;
+
+	DBGLOG(P2P, TRACE, "[ACS]Get LTE safe channels\n");
+
+	do {
+		if (!prAdapter)
+			break;
+
+		kalMemZero(&rQueryLteChn, sizeof(PARAM_GET_CHN_INFO));
+
+		/* Get LTE safe channel list */
+		wlanSendSetQueryCmd(prAdapter,
+				CMD_ID_GET_LTE_CHN,
+				FALSE,
+				TRUE,
+				FALSE,
+				nicCmdEventQueryLteSafeChn,
+				nicOidCmdTimeoutCommon,
+				0,
+				NULL,
+				&rQueryLteChn,
+				0);
+		rResult = WLAN_STATUS_SUCCESS;
+	} while (FALSE);
+
+	return rResult;
+}				/* wlanoidQueryLteSafeChannel */
+
+uint8_t
+wlanGetChannelIndex(IN uint8_t channel)
+{
+	uint8_t ucIdx = 1;
+
+	if (channel <= 14)
+		ucIdx = channel - 1;
+	else if (channel >= 36 && channel <= 64)
+		ucIdx = 14 + (channel - 36) / 4;
+	else if (channel >= 100 && channel <= 140)
+		ucIdx = 14 + 8 + (channel - 100) / 4;
+	else if (channel >= 149 && channel <= 173)
+		ucIdx = 14 + 8 + 11 + (channel - 149) / 4;
+	else if (channel >= 184 && channel <= 216)
+		ucIdx = 14 + 8 + 11 + 7 + (channel - 184) / 4;
+	else
+		DBGLOG(SCN, ERROR, "Invalid ch %u\n", channel);
+
+	return ucIdx;
+}
+

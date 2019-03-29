@@ -180,3 +180,13 @@ VOID p2pFuncDeauthComplete(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prP2pBssInf
 void p2pFunCleanQueuedMgmtFrame(IN P_ADAPTER_T prAdapter,
 		IN struct P2P_QUEUED_ACTION_FRAME *prFrame);
 
+void p2pFunProcessAcsReport(IN P_ADAPTER_T prAdapter,
+		IN P_PARAM_GET_CHN_INFO prLteSafeChnInfo,
+		IN struct P2P_ACS_REQ_INFO *prAcsReqInfo);
+
+void p2pFunIndicateAcsResult(IN P_GLUE_INFO_T prGlueInfo,
+		IN struct P2P_ACS_REQ_INFO *prAcsReqInfo);
+
+void p2pFunCalAcsChnScores(IN P_ADAPTER_T prAdapter,
+		IN ENUM_BAND_T eBand);
+
