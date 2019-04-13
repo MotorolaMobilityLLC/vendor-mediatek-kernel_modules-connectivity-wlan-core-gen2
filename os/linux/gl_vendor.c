@@ -366,12 +366,8 @@ int mtk_cfg80211_vendor_config_roaming(struct wiphy *wiphy,
 				 struct wireless_dev *wdev, const void *data, int data_len)
 {
 	P_GLUE_INFO_T prGlueInfo = NULL;
-	struct nlattr *attrlist;
-	struct AIS_BLACKLIST_ITEM *prBlackList;
-	P_BSS_DESC_T prBssDesc = NULL;
-	UINT_32 len_shift = 0;
-	UINT_32 numOfList[2] = { 0 };
-	int i;
+	UINT_32 u4ResultLen = 0;
+	WLAN_STATUS rStatus;
 
 	DBGLOG(REQ, INFO, "Receives roaming blacklist & whitelist with data_len=%d\n", data_len);
 	ASSERT(wiphy);
@@ -391,38 +387,12 @@ int mtk_cfg80211_vendor_config_roaming(struct wiphy *wiphy,
 		return WLAN_STATUS_SUCCESS;
 	}
 
-	attrlist = (struct nlattr *)((UINT_8 *) data);
+	rStatus = kalIoctl(prGlueInfo, wlanoidConfigRoaming, (PVOID)data, data_len,
+			   FALSE, FALSE, FALSE, FALSE, &u4ResultLen);
 
-	/* get the number of blacklist and copy those mac addresses from HAL */
-	if (attrlist->nla_type == WIFI_ATTRIBUTE_ROAMING_BLACKLIST_NUM) {
-		numOfList[0] = nla_get_u32(attrlist);
-		len_shift += NLA_ALIGN(attrlist->nla_len);
-	}
-	DBGLOG(REQ, INFO, "Get the number of blacklist=%d\n", numOfList[0]);
-
-	if (numOfList[0] >= 0 && numOfList[0] <= MAX_FW_ROAMING_BLACKLIST_SIZE) {
-		/*Refresh all the FWKBlacklist */
-		aisRefreshFWKBlacklist(prGlueInfo->prAdapter);
-
-		/* Start to receive blacklist mac addresses and set to FWK blacklist */
-		attrlist = (struct nlattr *)((UINT_8 *) data + len_shift);
-		for (i = 0; i < numOfList[0]; i++) {
-			if (attrlist->nla_type == WIFI_ATTRIBUTE_ROAMING_BLACKLIST_BSSID) {
-				prBssDesc = scanSearchBssDescByBssid(prGlueInfo->prAdapter, nla_data(attrlist));
-				len_shift += NLA_ALIGN(attrlist->nla_len);
-				attrlist = (struct nlattr *)((UINT_8 *) data + len_shift);
-
-				if (prBssDesc == NULL) {
-					DBGLOG(REQ, ERROR, "Cannot find the blacklist BSS=%pM\n", nla_data(attrlist));
-					continue;
-				}
-
-				prBlackList = aisAddBlacklist(prGlueInfo->prAdapter, prBssDesc);
-				prBlackList->fgIsInFWKBlacklist = TRUE;
-				DBGLOG(REQ, INFO, "Receives roaming blacklist SSID=%s addr=%pM\n",
-							prBlackList->aucSSID, prBlackList->aucBSSID);
-			}
-		}
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "%s config roaming error:%x\n", __func__, rStatus);
+		return -EINVAL;
 	}
 
 	return WLAN_STATUS_SUCCESS;
