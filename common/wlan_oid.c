@@ -12709,3 +12709,56 @@ WLAN_STATUS wlanoidGetWifiType(IN P_ADAPTER_T prAdapter,
 
 	return WLAN_STATUS_SUCCESS;
 }
+
+WLAN_STATUS
+wlanoidConfigRoaming(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer,
+		     IN UINT_32 u4SetBufferLen, OUT PUINT_32 pu4SetInfoLen)
+{
+	struct nlattr *attrlist;
+	struct AIS_BLACKLIST_ITEM *prBlackList;
+	P_BSS_DESC_T prBssDesc = NULL;
+	UINT_32 len_shift = 0;
+	UINT_32 numOfList[2] = { 0 };
+	int i;
+
+	attrlist = (struct nlattr *)pvSetBuffer;
+
+	/* get the number of blacklist and copy those mac addresses from HAL */
+	if (attrlist->nla_type == WIFI_ATTRIBUTE_ROAMING_BLACKLIST_NUM)
+		numOfList[0] = nla_get_u32(attrlist);
+
+	DBGLOG(REQ, INFO, "Get the number of blacklist=%d\n", numOfList[0]);
+	/*Refresh all the FWKBlacklist */
+	aisRefreshFWKBlacklist(prAdapter);
+
+	if (numOfList[0] < 0 || numOfList[0] > MAX_FW_ROAMING_BLACKLIST_SIZE)
+		return -EINVAL;
+
+	/* Start to receive blacklist mac addresses and set to FWK blacklist */
+	for (i = 0; i < numOfList[0] && len_shift < u4SetBufferLen; i++) {
+		len_shift += NLA_ALIGN(attrlist->nla_len);
+		attrlist = (struct nlattr *)((UINT_8 *) pvSetBuffer +
+								len_shift);
+		if (attrlist->nla_type ==
+		    WIFI_ATTRIBUTE_ROAMING_BLACKLIST_BSSID) {
+			prBssDesc = scanSearchBssDescByBssid(prAdapter,
+					  nla_data(attrlist));
+
+			if (prBssDesc == NULL) {
+				DBGLOG(REQ, ERROR,
+				       "Cannot find the blacklist BSS=%pM\n",
+				       nla_data(attrlist));
+				continue;
+			}
+
+			prBlackList = aisAddBlacklist(prAdapter, prBssDesc);
+			prBlackList->fgIsInFWKBlacklist = TRUE;
+			DBGLOG(REQ, INFO,
+			       "Receives roaming blacklist SSID=%s addr=%pM len=%d %d\n",
+			       prBlackList->aucSSID, prBlackList->aucBSSID,
+			       len_shift, u4SetBufferLen);
+		}
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}

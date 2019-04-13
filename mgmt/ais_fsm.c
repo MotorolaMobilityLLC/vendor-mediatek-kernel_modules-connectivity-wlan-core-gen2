@@ -5661,6 +5661,7 @@ VOID aisRemoveTimeoutBlacklist(P_ADAPTER_T prAdapter)
 	P_LINK_T prBlackList = &prConnSettings->rBlackList.rUsingLink;
 	P_LINK_T prFreeList = &prConnSettings->rBlackList.rFreeLink;
 	OS_SYSTIME rCurrent;
+	P_BSS_DESC_T prBssDesc = NULL;
 
 	GET_CURRENT_SYSTIME(&rCurrent);
 
@@ -5669,6 +5670,14 @@ VOID aisRemoveTimeoutBlacklist(P_ADAPTER_T prAdapter)
 			continue;
 		if (!CHECK_FOR_TIMEOUT(rCurrent, prEntry->rAddTime, SEC_TO_MSEC(AIS_BLACKLIST_TIMEOUT)))
 			continue;
+
+		prBssDesc = scanSearchBssDescByBssid(prAdapter,
+						     prEntry->aucBSSID);
+		if (prBssDesc) {
+			prBssDesc->prBlack = NULL;
+			DBGLOG(AIS, INFO, "Remove Timeout %pM from blacklist\n",
+			       prBssDesc->aucBSSID);
+		}
 		LINK_REMOVE_KNOWN_ENTRY(prBlackList, &prEntry->rLinkEntry);
 		LINK_INSERT_HEAD(prFreeList, &prEntry->rLinkEntry);
 	}
@@ -5698,8 +5707,15 @@ static VOID aisRemoveDisappearedBlacklist(P_ADAPTER_T prAdapter)
 		}
 		if (!fgDisappeared || (u4Current - prEntry->u4DisapperTime) < 600 * USEC_PER_SEC)
 			continue;
-		DBGLOG(AIS, INFO, "Remove disappeared blacklist %s %pM\n",
-			prEntry->aucSSID, prEntry->aucBSSID);
+
+		prBssDesc = scanSearchBssDescByBssid(prAdapter,
+						     prEntry->aucBSSID);
+		if (prBssDesc) {
+			prBssDesc->prBlack = NULL;
+			DBGLOG(AIS, INFO,
+			       "Remove disappeared blacklist %s %pM\n",
+			       prEntry->aucSSID, prEntry->aucBSSID);
+		}
 		LINK_REMOVE_KNOWN_ENTRY(prBlackList, &prEntry->rLinkEntry);
 		LINK_INSERT_HEAD(prFreeList, &prEntry->rLinkEntry);
 	}
