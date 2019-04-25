@@ -1250,6 +1250,10 @@ VOID kalP2PGOStationUpdate(IN P_GLUE_INFO_T prGlueInfo, IN P_STA_RECORD_T prCliS
 		prP2pGlueInfo = prGlueInfo->prP2PInfo;
 
 		if (fgIsNew) {
+			if (prCliStaRec->fgIsConnected == TRUE)
+				break;
+			prCliStaRec->fgIsConnected = TRUE;
+
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 4, 0))
 			rStationInfo.filled = STATION_INFO_ASSOC_REQ_IES;
 #endif
@@ -1261,6 +1265,10 @@ VOID kalP2PGOStationUpdate(IN P_GLUE_INFO_T prGlueInfo, IN P_STA_RECORD_T prCliS
 			cfg80211_new_sta(prGlueInfo->prP2PInfo->prDevHandler,	/* struct net_device * dev, */
 					 prCliStaRec->aucMacAddr, &rStationInfo, GFP_KERNEL);
 		} else {
+			if (prCliStaRec->fgIsConnected == FALSE)
+				break;
+			prCliStaRec->fgIsConnected = FALSE;
+
 			++prP2pGlueInfo->i4Generation;
 
 			cfg80211_del_sta(prGlueInfo->prP2PInfo->prDevHandler,	/* struct net_device * dev, */

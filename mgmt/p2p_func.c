@@ -1586,6 +1586,8 @@ p2pFuncValidateAuth(IN P_ADAPTER_T prAdapter,
 				p2pFuncResetStaRecStatus(prAdapter, prStaRec);
 
 				bssRemoveStaRecFromClientList(prAdapter, prP2pBssInfo, prStaRec);
+				p2pFuncDisconnect(prAdapter, prStaRec, FALSE,
+						REASON_CODE_DISASSOC_INACTIVITY);
 			}
 		}
 

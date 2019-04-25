@@ -508,6 +508,13 @@ struct _STA_RECORD_T {
 
 	/* For Infra/GC Mode, a timer used to avoid the Deauth frame not be sent */
 	TIMER_T rDeauthTxDoneTimer;
+
+	/*
+	 * Flag used to record the connected status of upper layer.
+	 * Indicate connected status only when disconnected, and only
+	 * indicate disconnected status only when connected.
+	 */
+	u_int8_t fgIsConnected;
 };
 
 #if 0
