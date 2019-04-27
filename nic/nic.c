@@ -1494,7 +1494,11 @@ WLAN_STATUS nicUpdateBss(IN P_ADAPTER_T prAdapter, IN ENUM_NETWORK_TYPE_INDEX_T 
 	else
 		rCmdSetBssInfo.ucStaRecIdxOfAP = STA_REC_INDEX_NOT_FOUND;
 
-	DBGLOG(NIC, INFO, "nicUpdateBss eNetworkTypeIdx: %d\n", eNetworkTypeIdx);
+	DBGLOG(NIC, INFO,
+		"nicUpdateBss eNetworkTypeIdx: %d, OwnMac=" MACSTR "\n",
+		eNetworkTypeIdx,
+		MAC2STR(prBssInfo->aucOwnMacAddr));
+
 	u4Status = wlanSendSetQueryCmd(prAdapter,
 				       CMD_ID_SET_BSS_INFO,
 				       TRUE,

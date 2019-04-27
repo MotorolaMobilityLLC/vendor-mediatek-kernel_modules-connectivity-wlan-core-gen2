@@ -2086,17 +2086,51 @@ int p2pSetMACAddress(IN struct net_device *prDev, void *addr)
 {
 	P_ADAPTER_T prAdapter = NULL;
 	P_GLUE_INFO_T prGlueInfo = NULL;
+	P_BSS_INFO_T prBssInfo = NULL;
+	struct sockaddr *sa = NULL;
+	struct wireless_dev *wdev = NULL;
 
-	ASSERT(prDev);
-
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prDev));
+	prGlueInfo = *((struct P_GLUE_INFO_T **) netdev_priv(prDev));
 	ASSERT(prGlueInfo);
 
 	prAdapter = prGlueInfo->prAdapter;
 	ASSERT(prAdapter);
 
-	/* @FIXME */
-	return eth_mac_addr(prDev, addr);
+	if (!prDev || !addr) {
+		DBGLOG(INIT, ERROR, "Set macaddr with ndev(%d) and addr(%d)\n",
+		       (prDev == NULL) ? 0 : 1, (addr == NULL) ? 0 : 1);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	wdev = prDev->ieee80211_ptr;
+	if (wdev->ssid_len > 0 || (wdev->current_bss)) {
+		DBGLOG(INIT, ERROR,
+		       "Reject macaddr change\n");
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	prBssInfo
+		= &(prAdapter->rWifiVar.arBssInfo[NETWORK_TYPE_P2P_INDEX]);
+	if (!prBssInfo) {
+		DBGLOG(INIT, ERROR, "bss is not active\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	sa = (struct sockaddr *)addr;
+
+	COPY_MAC_ADDR(prBssInfo->aucOwnMacAddr, sa->sa_data);
+	COPY_MAC_ADDR(prDev->dev_addr, sa->sa_data);
+
+	COPY_MAC_ADDR(prAdapter->rWifiVar.aucDeviceAddress,
+		sa->sa_data);
+	COPY_MAC_ADDR(prAdapter->rWifiVar.aucInterfaceAddress,
+		sa->sa_data);
+
+	DBGLOG(INIT, INFO,
+		"Set random macaddr to " MACSTR ".\n",
+		MAC2STR(prBssInfo->aucOwnMacAddr));
+
+	return WLAN_STATUS_SUCCESS;
 }
 
 /*----------------------------------------------------------------------------*/

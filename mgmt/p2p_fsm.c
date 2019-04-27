@@ -254,6 +254,7 @@ VOID p2pFsmStateTransition(IN P_ADAPTER_T prAdapter, IN P_P2P_FSM_INFO_T prP2pFs
 #if !CFG_SUPPORT_RLM_ACT_NETWORK
 			SET_NET_ACTIVE(prAdapter, NETWORK_TYPE_P2P_INDEX);
 			nicActivateNetwork(prAdapter, NETWORK_TYPE_P2P_INDEX);
+			nicUpdateBss(prAdapter, NETWORK_TYPE_P2P_INDEX);
 #else
 			rlmActivateNetwork(prAdapter, NETWORK_TYPE_P2P_INDEX, NET_ACTIVE_SRC_NONE);
 #endif
