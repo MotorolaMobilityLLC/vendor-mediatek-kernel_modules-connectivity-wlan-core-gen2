@@ -2090,7 +2090,7 @@ int p2pSetMACAddress(IN struct net_device *prDev, void *addr)
 	struct sockaddr *sa = NULL;
 	struct wireless_dev *wdev = NULL;
 
-	prGlueInfo = *((struct P_GLUE_INFO_T **) netdev_priv(prDev));
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prDev));
 	ASSERT(prGlueInfo);
 
 	prAdapter = prGlueInfo->prAdapter;
