@@ -56,8 +56,9 @@
 #if !defined(CONFIG_MTK_CLKMGR)
 #include <linux/clk.h>
 #endif
-
-/* #define MTK_DMA_BUF_MEMCPY_SUP */ /* no virt_to_phys() use */
+#if (__SIZEOF_LONG__  == 8)
+#define MTK_DMA_BUF_MEMCPY_SUP /* no virt_to_phys() use */
+#endif
 /* #define HIF_DEBUG_SUP */
 /* #define HIF_DEBUG_SUP_TX */
 
@@ -826,9 +827,9 @@ kalDevPortRead(IN P_GLUE_INFO_T GlueInfo, IN UINT_16 Port, IN UINT_32 Size, OUT 
 		/* TODO: use virt_to_phys() */
 		if (DmaConf.Dst == NULL) {
 			HIF_DBG(("[WiFi/HIF] Use Dma Buffer to RX packet (%d %d)...\n", Size, CFG_RX_MAX_PKT_SIZE));
-			ASSERT(Size <= CFG_RX_MAX_PKT_SIZE);
+			/* ASSERT(Size <= CFG_RX_MAX_PKT_SIZE); */
 
-			kalDmaBufGet(&DmaVBuf, &DmaPBuf);
+			kalDmaBufGet(HifInfo->Dev, &DmaVBuf, &DmaPBuf);
 			DmaConf.Dst = (ULONG) DmaPBuf;
 		}
 #else
@@ -1058,9 +1059,9 @@ kalDevPortWrite(IN P_GLUE_INFO_T GlueInfo, IN UINT_16 Port, IN UINT_32 Size, IN 
 		/* TODO: use virt_to_phys() */
 		if (DmaConf.Src == NULL) {
 			HIF_DBG_TX(("[WiFi/HIF] Use Dma Buffer to TX packet (%d %d)...\n", Size, CFG_RX_MAX_PKT_SIZE));
-			ASSERT(Size <= CFG_RX_MAX_PKT_SIZE);
+			/* ASSERT(Size <= CFG_RX_MAX_PKT_SIZE); */
 
-			kalDmaBufGet(&DmaVBuf, &DmaPBuf);
+			kalDmaBufGet(HifInfo->Dev, &DmaVBuf, &DmaPBuf);
 			DmaConf.Src = (ULONG) DmaPBuf;
 
 			kalMemCopy(DmaVBuf, Buf, Size);

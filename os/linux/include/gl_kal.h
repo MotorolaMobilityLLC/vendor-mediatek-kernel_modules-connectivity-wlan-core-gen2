@@ -823,7 +823,7 @@ BOOLEAN kalIsAPmode(IN P_GLUE_INFO_T prGlueInfo);
 
 ULONG kalIOPhyAddrGet(IN ULONG VirtAddr);
 
-VOID kalDmaBufGet(OUT VOID **VirtAddr, OUT VOID **PhyAddr);
+VOID kalDmaBufGet(IN VOID *dev, OUT VOID **VirtAddr, OUT VOID **PhyAddr);
 
 #if CFG_SUPPORT_802_11W
 /*----------------------------------------------------------------------------*/

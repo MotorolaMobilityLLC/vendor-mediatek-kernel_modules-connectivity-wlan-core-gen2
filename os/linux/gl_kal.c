@@ -62,7 +62,9 @@ int allocatedMemSize;
 *                           P R I V A T E   D A T A
 ********************************************************************************
 */
-/* #define MTK_DMA_BUF_MEMCPY_SUP */
+#if (__SIZEOF_LONG__  == 8)
+#define MTK_DMA_BUF_MEMCPY_SUP
+#endif
 static PVOID pvIoBuffer;
 
 #ifdef MTK_DMA_BUF_MEMCPY_SUP
@@ -3341,12 +3343,6 @@ BOOLEAN kalInitIOBuffer(VOID)
 	else
 		u4Size = CFG_RX_COALESCING_BUFFER_SIZE + sizeof(ENHANCE_MODE_DATA_STRUCT_T);
 
-#ifdef MTK_DMA_BUF_MEMCPY_SUP
-	pvDmaBuffer = dma_alloc_coherent(NULL, CFG_RX_MAX_PKT_SIZE, &pvDmaPhyBuf, GFP_KERNEL);
-	if (pvDmaBuffer == NULL)
-		return FALSE;
-#endif /* MTK_DMA_BUF_MEMCPY_SUP */
-
 	pvIoBuffer = kmalloc(u4Size, GFP_KERNEL);
 	/* pvIoBuffer = dma_alloc_coherent(NULL, u4Size, &pvIoPhyBuf, GFP_KERNEL); */
 	if (pvIoBuffer) {
@@ -3374,7 +3370,7 @@ VOID kalUninitIOBuffer(VOID)
 {
 	kfree(pvIoBuffer);
 #ifdef MTK_DMA_BUF_MEMCPY_SUP
-	dma_free_coherent(NULL, CFG_RX_MAX_PKT_SIZE, pvDmaBuffer, pvDmaPhyBuf);
+	dma_free_coherent(NULL, CFG_RX_COALESCING_BUFFER_SIZE, pvDmaBuffer, pvDmaPhyBuf);
 #endif /* MTK_DMA_BUF_MEMCPY_SUP */
 	/* dma_free_coherent(NULL, pvIoBufferSize, pvIoBuffer, pvIoPhyBuf); */
 
@@ -3632,8 +3628,17 @@ ULONG kalIOPhyAddrGet(IN ULONG VirtAddr)
  * \return physical addr
  */
 /*----------------------------------------------------------------------------*/
-VOID kalDmaBufGet(OUT VOID **VirtAddr, OUT VOID **PhyAddr)
+VOID kalDmaBufGet(IN VOID *dev, OUT VOID **VirtAddr, OUT VOID **PhyAddr)
 {
+	if (pvDmaBuffer == NULL) {
+		dma_addr_t rAddr;
+
+		pvDmaBuffer = dma_alloc_coherent(dev, CFG_RX_COALESCING_BUFFER_SIZE, &rAddr, GFP_KERNEL);
+		pvDmaPhyBuf = (PVOID) rAddr;
+		if (pvDmaBuffer == NULL)
+			DBGLOG(INIT, ERROR, "pvDmaBuffer is still NULL.\n");
+	}
+
 	*VirtAddr = pvDmaBuffer;
 	*PhyAddr = pvDmaPhyBuf;
 }
