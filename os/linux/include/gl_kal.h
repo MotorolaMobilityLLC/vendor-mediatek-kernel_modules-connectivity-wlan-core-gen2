@@ -269,7 +269,7 @@ struct KAL_HALT_CTRL_T {
 #define KAL_WAKE_LOCK(_prAdapter, _prWakeLock) \
 	__pm_stay_awake(_prWakeLock)
 #define KAL_WAKE_LOCK_TIMEOUT(_prAdapter, _prWakeLock, _u4Timeout) \
-	__pm_wakeup_event(_prWakeLock, _u4Timeout)
+	__pm_wakeup_event(_prWakeLock, JIFFIES_TO_MSEC(_u4Timeout))
 #define KAL_WAKE_UNLOCK(_prAdapter, _prWakeLock) \
 	__pm_relax(_prWakeLock)
 #define KAL_WAKE_LOCK_ACTIVE(_prAdapter, _prWakeLock) \
@@ -529,6 +529,7 @@ do { \
 #define MSEC_TO_SYSTIME(_msec)      (_msec)
 
 #define MSEC_TO_JIFFIES(_msec)      msecs_to_jiffies(_msec)
+#define JIFFIES_TO_MSEC(_jiffie)    jiffies_to_msecs(_jiffie)
 
 #define KAL_HALT_LOCK_TIMEOUT_NORMAL_CASE		3000 /* 3s */
 
