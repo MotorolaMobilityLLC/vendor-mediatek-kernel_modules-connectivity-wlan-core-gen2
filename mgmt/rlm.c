@@ -2793,7 +2793,8 @@ VOID rlmActivateNetwork(P_ADAPTER_T prAdapter, ENUM_NETWORK_TYPE_INDEX_T eNetwor
 		SET_NET_ACTIVE(prAdapter, eNetworkTypeIdx);
 		/* sync with firmware */
 		nicActivateNetwork(prAdapter, eNetworkTypeIdx);
-		nicUpdateBss(prAdapter, NETWORK_TYPE_P2P_INDEX);
+		if (eNetworkTypeIdx == NETWORK_TYPE_P2P_INDEX)
+			nicUpdateBss(prAdapter, eNetworkTypeIdx);
 	}
 	DBGLOG(RLM, INFO, "rlm: active=%d, Type=%d, Src=%d, SrcVal=%d\n",
 		isActive, eNetworkTypeIdx, eNetActiveSrcIdx,
