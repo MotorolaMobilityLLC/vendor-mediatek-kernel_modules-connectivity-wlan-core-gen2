@@ -498,9 +498,7 @@ WLAN_STATUS authCheckRxAuthFrameTransSeq(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T
 {
 	P_WLAN_AUTH_FRAME_T prAuthFrame;
 	UINT_16 u2RxTransactionSeqNum;
-#if CFG_IGNORE_INVALID_AUTH_TSN
 	P_STA_RECORD_T prStaRec;
-#endif
 
 	ASSERT(prSwRfb);
 
@@ -514,6 +512,15 @@ WLAN_STATUS authCheckRxAuthFrameTransSeq(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T
 		ASSERT(0);
 		return WLAN_STATUS_SUCCESS;
 	}
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+	if (prStaRec && IS_STA_IN_AIS(prStaRec)) {
+		if (prStaRec->eAuthAssocState == SAA_STATE_EXTERNAL_AUTH) {
+			saaFsmRunEventRxAuth(prAdapter, prSwRfb);
+			return WLAN_STATUS_SUCCESS;
+		}
+	}
+
 	/* 4 <3> Parse the Fixed Fields of Authentication Frame Body. */
 	/* WLAN_GET_FIELD_16(&prAuthFrame->u2AuthTransSeqNo, &u2RxTransactionSeqNum); */
 	u2RxTransactionSeqNum = prAuthFrame->u2AuthTransSeqNo;	/* NOTE(Kevin): Optimized for ARM */

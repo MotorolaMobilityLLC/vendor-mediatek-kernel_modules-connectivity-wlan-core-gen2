@@ -901,4 +901,6 @@ VOID kalFbNotifierUnReg(VOID);
 VOID nicConfigProcSetCamCfgWrite(BOOLEAN enabled);
 #endif
 VOID kalChangeSchedParams(P_GLUE_INFO_T prGlueInfo, BOOLEAN fgNormalThread);
+int kalExternalAuthRequest(IN P_ADAPTER_T prAdapter,
+			   IN uint8_t uBssIndex);
 #endif /* _GL_KAL_H */
