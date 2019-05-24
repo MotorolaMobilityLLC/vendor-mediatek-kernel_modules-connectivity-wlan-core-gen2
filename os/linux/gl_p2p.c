@@ -2088,7 +2088,6 @@ int p2pSetMACAddress(IN struct net_device *prDev, void *addr)
 	P_GLUE_INFO_T prGlueInfo = NULL;
 	P_BSS_INFO_T prBssInfo = NULL;
 	struct sockaddr *sa = NULL;
-	struct wireless_dev *wdev = NULL;
 
 	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prDev));
 	ASSERT(prGlueInfo);
@@ -2100,13 +2099,6 @@ int p2pSetMACAddress(IN struct net_device *prDev, void *addr)
 		DBGLOG(INIT, ERROR, "Set macaddr with ndev(%d) and addr(%d)\n",
 		       (prDev == NULL) ? 0 : 1, (addr == NULL) ? 0 : 1);
 		return WLAN_STATUS_INVALID_DATA;
-	}
-
-	wdev = prDev->ieee80211_ptr;
-	if (wdev->ssid_len > 0 || (wdev->current_bss)) {
-		DBGLOG(INIT, ERROR,
-		       "Reject macaddr change\n");
-		return WLAN_STATUS_NOT_ACCEPTED;
 	}
 
 	prBssInfo
