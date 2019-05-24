@@ -466,6 +466,13 @@ VOID aisFsmStateInit_JOIN(IN P_ADAPTER_T prAdapter, P_BSS_DESC_T prBssDesc)
 			prAisFsmInfo->ucAvailableAuthTypes = (UINT_8) (AUTH_TYPE_OPEN_SYSTEM | AUTH_TYPE_SHARED_KEY);
 			break;
 
+		case AUTH_MODE_WPA3_SAE:
+			DBGLOG(AIS, LOUD,
+			       "JOIN INIT: eAuthMode == AUTH_MODE_SAE\n");
+			prAisFsmInfo->ucAvailableAuthTypes =
+			    (uint8_t) AUTH_TYPE_SAE;
+			break;
+
 		default:
 			ASSERT(!(prConnSettings->eAuthMode == AUTH_MODE_WPA_NONE));
 			DBGLOG(AIS, ERROR, "JOIN INIT: Auth Algorithm : %d was not supported by JOIN\n",
@@ -491,13 +498,22 @@ VOID aisFsmStateInit_JOIN(IN P_ADAPTER_T prAdapter, P_BSS_DESC_T prBssDesc)
 
 		/* TODO(Kevin): We may call a sub function to acquire the Roaming Auth Type */
 		/* FT and FT Resource Request Protocol should use FT AA(Auth Algorithm) */
-		if (prConnSettings->eAuthMode == AUTH_MODE_WPA2_FT ||
-			prConnSettings->eAuthMode == AUTH_MODE_WPA2_FT_PSK ||
-			prConnSettings->eAuthMode == AUTH_MODE_NON_RSN_FT) {
-			prAisFsmInfo->ucAvailableAuthTypes = (UINT_8) AUTH_TYPE_FAST_BSS_TRANSITION;
-		} else
-			prAisFsmInfo->ucAvailableAuthTypes = prAisSpecificBssInfo->ucRoamingAuthTypes;
-
+		switch (prConnSettings->eAuthMode) {
+		case AUTH_MODE_WPA2_FT:
+		case AUTH_MODE_WPA2_FT_PSK:
+		case AUTH_MODE_NON_RSN_FT:
+			prAisFsmInfo->ucAvailableAuthTypes =
+			    (uint8_t) AUTH_TYPE_FAST_BSS_TRANSITION;
+			break;
+		case AUTH_MODE_WPA3_SAE:
+			prAisFsmInfo->ucAvailableAuthTypes =
+			    (uint8_t) AUTH_TYPE_SAE;
+			break;
+		default:
+			prAisFsmInfo->ucAvailableAuthTypes =
+			    prAisSpecificBssInfo->ucRoamingAuthTypes;
+			break;
+		}
 
 		prStaRec->ucTxAuthAssocRetryLimit = TX_AUTH_ASSOCI_RETRY_LIMIT_FOR_ROAMING;
 	}
@@ -523,8 +539,15 @@ VOID aisFsmStateInit_JOIN(IN P_ADAPTER_T prAdapter, P_BSS_DESC_T prBssDesc)
 		prAisFsmInfo->ucAvailableAuthTypes &= ~(UINT_8) AUTH_TYPE_FAST_BSS_TRANSITION;
 
 		prStaRec->ucAuthAlgNum = (UINT_8) AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION;
+	} else if (prAisFsmInfo->ucAvailableAuthTypes & (uint8_t)
+		   AUTH_TYPE_SAE) {
+		DBGLOG(AIS, LOUD,
+		       "JOIN INIT: Try to do Authentication with AuthType == SAE.\n");
+		prStaRec->ucAuthAlgNum = (uint8_t) AUTH_ALGORITHM_NUM_SAE;
 	} else {
-		ASSERT(0);
+		DBGLOG(AIS, ERROR,
+		       "JOIN INIT: No available AuthType found, %d\n",
+		       prAisFsmInfo->ucAvailableAuthTypes);
 	}
 
 	/* 4 <5> Overwrite Connection Setting for eConnectionPolicy == ANY (Used by Assoc Req) */

@@ -243,6 +243,7 @@ enum {
 #endif
 
 #define IW_AUTH_ALG_FT			0x00000008
+#define IW_AUTH_ALG_SAE			0x00000010
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -289,11 +290,8 @@ wextSrchDesiredWPSIE(IN PUINT_8 pucIEStart,
 #if CFG_SUPPORT_HOTSPOT_2_0
 BOOLEAN wextSrchDesiredHS20IE(IN PUINT_8 pucIEStart, IN INT_32 i4TotalIeLen, OUT PPUINT_8 ppucDesiredIE);
 
-BOOLEAN wextSrchDesiredInterworkingIE(IN PUINT_8 pucIEStart, IN INT_32 i4TotalIeLen, OUT PPUINT_8 ppucDesiredIE);
-
 BOOLEAN wextSrchDesiredAdvProtocolIE(IN PUINT_8 pucIEStart, IN INT_32 i4TotalIeLen, OUT PPUINT_8 ppucDesiredIE);
 
-BOOLEAN wextSrchDesiredRoamingConsortiumIE(IN PUINT_8 pucIEStart, IN INT_32 i4TotalIeLen, OUT PPUINT_8 ppucDesiredIE);
 BOOLEAN wextSrchDesiredOsenIE(IN PUINT_8 pucIEStart, IN INT_32 i4TotalIeLen, OUT PPUINT_8 ppucDesiredIE);
 #endif
 

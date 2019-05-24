@@ -607,7 +607,7 @@
 #ifdef LINUX
 #ifdef CONFIG_X86
 #define CFG_ENABLE_WIFI_DIRECT          0
-#define CFG_SUPPORT_802_11W             0
+#define CFG_SUPPORT_802_11W             1
 #else
 #define CFG_ENABLE_WIFI_DIRECT          1
 #define CFG_SUPPORT_802_11W             1

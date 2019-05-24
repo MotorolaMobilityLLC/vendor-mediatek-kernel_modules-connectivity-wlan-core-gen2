@@ -672,45 +672,6 @@ BOOLEAN wextSrchDesiredOsenIE(IN PUINT_8 pucIEStart, IN INT_32 i4TotalIeLen, OUT
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Find the desired interworking Information Element according to desiredElemID.
-*
-* \param[in] pucIEStart IE starting address.
-* \param[in] i4TotalIeLen Total length of all the IE.
-* \param[in] ucDesiredElemId Desired element ID.
-* \param[out] ppucDesiredIE Pointer to the desired IE.
-*
-* \retval TRUE Find the desired IE.
-* \retval FALSE Desired IE not found.
-*
-* \note
-*/
-/*----------------------------------------------------------------------------*/
-BOOLEAN wextSrchDesiredInterworkingIE(IN PUINT_8 pucIEStart, IN INT_32 i4TotalIeLen, OUT PPUINT_8 ppucDesiredIE)
-{
-	INT_32 i4InfoElemLen;
-
-	ASSERT(pucIEStart);
-	ASSERT(ppucDesiredIE);
-
-	while (i4TotalIeLen >= 2) {
-		i4InfoElemLen = (INT_32) pucIEStart[1] + 2;
-
-		if (pucIEStart[0] == ELEM_ID_INTERWORKING && i4InfoElemLen <= i4TotalIeLen) {
-			*ppucDesiredIE = &pucIEStart[0];
-			return TRUE;
-		}
-
-		/* check desired EID */
-		/* Select next information element. */
-		i4TotalIeLen -= i4InfoElemLen;
-		pucIEStart += i4InfoElemLen;
-	}
-
-	return FALSE;
-}				/* wextSrchDesiredInterworkingIE */
-
-/*----------------------------------------------------------------------------*/
-/*!
 * \brief Find the desired Adv Protocol Information Element according to desiredElemID.
 *
 * \param[in] pucIEStart IE starting address.
@@ -747,45 +708,6 @@ BOOLEAN wextSrchDesiredAdvProtocolIE(IN PUINT_8 pucIEStart, IN INT_32 i4TotalIeL
 
 	return FALSE;
 }				/* wextSrchDesiredAdvProtocolIE */
-
-/*----------------------------------------------------------------------------*/
-/*!
-* \brief Find the desired Roaming Consortium Information Element according to desiredElemID.
-*
-* \param[in] pucIEStart IE starting address.
-* \param[in] i4TotalIeLen Total length of all the IE.
-* \param[in] ucDesiredElemId Desired element ID.
-* \param[out] ppucDesiredIE Pointer to the desired IE.
-*
-* \retval TRUE Find the desired IE.
-* \retval FALSE Desired IE not found.
-*
-* \note
-*/
-/*----------------------------------------------------------------------------*/
-BOOLEAN wextSrchDesiredRoamingConsortiumIE(IN PUINT_8 pucIEStart, IN INT_32 i4TotalIeLen, OUT PPUINT_8 ppucDesiredIE)
-{
-	INT_32 i4InfoElemLen;
-
-	ASSERT(pucIEStart);
-	ASSERT(ppucDesiredIE);
-
-	while (i4TotalIeLen >= 2) {
-		i4InfoElemLen = (INT_32) pucIEStart[1] + 2;
-
-		if (pucIEStart[0] == ELEM_ID_ROAMING_CONSORTIUM && i4InfoElemLen <= i4TotalIeLen) {
-			*ppucDesiredIE = &pucIEStart[0];
-			return TRUE;
-		}
-
-		/* check desired EID */
-		/* Select next information element. */
-		i4TotalIeLen -= i4InfoElemLen;
-		pucIEStart += i4InfoElemLen;
-	}
-
-	return FALSE;
-}				/* wextSrchDesiredRoamingConsortiumIE */
 #endif
 
 BOOLEAN wextSrchOkcAndPMKID(IN PUINT_8 pucIEStart, IN INT_32 i4TotalIeLen, OUT PPUINT_8 ppucPMKID, OUT PUINT_8 okc)
@@ -3763,26 +3685,6 @@ int wext_support_ioctl(IN struct net_device *prDev, IN struct ifreq *prIfReq, IN
 				 * printk(KERN_INFO "[wapi] set wapi assoc info error:%lx\n",
 				 * rStatus);
 				 */
-#endif
-#if CFG_SUPPORT_WPS2
-				PUINT_8 prDesiredIE = NULL;
-
-				if (wextSrchDesiredWPSIE(prExtraBuf,
-							 u4ExtraSize,
-							 0xDD, (PUINT_8 *) &prDesiredIE)) {
-					rStatus = kalIoctl(prGlueInfo,
-							   wlanoidSetWSCAssocInfo,
-							   prDesiredIE,
-							   IE_SIZE(prDesiredIE),
-							   FALSE,
-							   FALSE, TRUE, FALSE, &u4BufLen);
-					if (rStatus != WLAN_STATUS_SUCCESS) {
-						/*
-						 * printk(KERN_INFO "[WSC] set WSC assoc info
-						 * error:%lx\n", rStatus);
-						 */
-					}
-				}
 #endif
 #if CFG_SUPPORT_WAPI
 			}

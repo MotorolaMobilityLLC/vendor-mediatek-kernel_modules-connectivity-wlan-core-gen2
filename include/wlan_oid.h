@@ -115,6 +115,7 @@ typedef enum _ENUM_PARAM_AUTH_MODE_T {
 	AUTH_MODE_WPA2_FT, /* Fast Bss Transition for 802.1x */
 	AUTH_MODE_WPA2_FT_PSK, /* Fast Bss Transition for WPA2 PSK */
 	AUTH_MODE_WPA_OSEN,
+	AUTH_MODE_WPA3_SAE,
 	AUTH_MODE_NUM		/*!< Upper bound, not real case */
 } ENUM_PARAM_AUTH_MODE_T, *P_ENUM_PARAM_AUTH_MODE_T;
 
@@ -169,6 +170,12 @@ typedef enum _ENUM_PARAM_PHY_TYPE_T {
 				 */
 	PHY_TYPE_NUM		/* 5 */
 } ENUM_PARAM_PHY_TYPE_T, *P_ENUM_PARAM_PHY_TYPE_T;
+
+struct PARAM_EXTERNAL_AUTH {
+	uint8_t bssid[PARAM_MAC_ADDR_LEN];
+	uint16_t status;
+	uint8_t ucBssIdx;
+};
 
 typedef enum _ENUM_PARAM_OP_MODE_T {
 	NET_TYPE_IBSS = 0,	/*!< Try to merge/establish an AdHoc, do periodic SCAN for merging. */
@@ -1523,12 +1530,6 @@ wlanoidSetWapiKey(IN P_ADAPTER_T prAdapter,
 		  IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen, OUT PUINT_32 pu4SetInfoLen);
 #endif
 
-#if CFG_SUPPORT_WPS2
-WLAN_STATUS
-wlanoidSetWSCAssocInfo(IN P_ADAPTER_T prAdapter,
-		       IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen, OUT PUINT_32 pu4SetInfoLen);
-#endif
-
 #if CFG_ENABLE_WAKEUP_ON_LAN
 WLAN_STATUS
 wlanoidSetAddWakeupPattern(IN P_ADAPTER_T prAdapter,
@@ -1665,14 +1666,6 @@ wlanoidQueryBatchScanResult(IN P_ADAPTER_T prAdapter,
 WLAN_STATUS
 wlanoidSetHS20Info(IN P_ADAPTER_T prAdapter,
 		   IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen, OUT PUINT_32 pu4SetInfoLen);
-
-WLAN_STATUS
-wlanoidSetInterworkingInfo(IN P_ADAPTER_T prAdapter,
-			   IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen, OUT PUINT_32 pu4SetInfoLen);
-
-WLAN_STATUS
-wlanoidSetRoamingConsortiumIEInfo(IN P_ADAPTER_T prAdapter,
-				  IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen, OUT PUINT_32 pu4SetInfoLen);
 
 WLAN_STATUS
 wlanoidSetHS20BssidPool(IN P_ADAPTER_T prAdapter,
@@ -1980,3 +1973,9 @@ wlanoidGetWifiType(IN P_ADAPTER_T prAdapter,
 		   IN void *pvSetBuffer,
 		   IN uint32_t u4SetBufferLen,
 		   OUT uint32_t *pu4SetInfoLen);
+
+uint32_t
+wlanoidExternalAuthDone(IN P_ADAPTER_T prAdapter,
+			IN void *pvSetBuffer,
+			IN uint32_t u4SetBufferLen,
+			OUT uint32_t *pu4SetInfoLen);

@@ -143,6 +143,10 @@ VOID secInit(IN P_ADAPTER_T prAdapter, IN UINT_8 ucNetTypeIdx)
 	    RSN_AKM_SUITE_802_1X_SHA256;
 	prAdapter->rMib.dot11RSNAConfigAuthenticationSuitesTable[10].dot11RSNAConfigAuthenticationSuite =
 	    RSN_AKM_SUITE_PSK_SHA256;
+	prAdapter->rMib.dot11RSNAConfigAuthenticationSuitesTable[11].dot11RSNAConfigAuthenticationSuite =
+	    RSN_CIPHER_SUITE_SAE;
+	prAdapter->rMib.dot11RSNAConfigAuthenticationSuitesTable[12].dot11RSNAConfigAuthenticationSuite =
+	    RSN_CIPHER_SUITE_OWE;
 #else
 
 #endif

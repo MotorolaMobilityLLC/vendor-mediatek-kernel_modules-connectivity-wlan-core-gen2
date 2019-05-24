@@ -183,6 +183,8 @@ typedef struct _CONNECTION_SETTINGS_T {
 	BOOLEAN fgSecModeChangeStartTimer;
 #endif
 	struct LINK_MGMT rBlackList;
+	uint8_t *pucAssocIEs;
+	size_t assocIeLen;
 } CONNECTION_SETTINGS_T, *P_CONNECTION_SETTINGS_T;
 
 struct _BSS_INFO_T {
