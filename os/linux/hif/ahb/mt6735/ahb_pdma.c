@@ -30,7 +30,9 @@
 #include <linux/delay.h>	/* udelay and mdelay macro */
 
 #if CONFIG_ANDROID
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0))
 #include <linux/wakelock.h>
+#endif
 #endif
 
 #include <linux/irq.h>		/* IRQT_FALLING */
