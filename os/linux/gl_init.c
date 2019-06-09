@@ -3426,6 +3426,7 @@ bailout:
 #if CFG_TC10_FEATURE
 		wlanProcessInfoFile(prAdapter);
 #endif
+		update_driver_loaded_status(TRUE);
 	} else {
 		/*
 		 * we don't care the return value of mtk_wcn_set_connsys_power_off_flag,
@@ -3442,6 +3443,7 @@ bailout:
 			wlanDbgSetLogLevelImpl(prAdapter, ENUM_WIFI_LOG_LEVEL_VERSION_V1,
 					ENUM_WIFI_LOG_MODULE_FW, u4FwLogLevel);
 	}
+
 	return i4Status;
 }				/* end of wlanProbe() */
 
@@ -3650,6 +3652,8 @@ static VOID wlanRemove(VOID)
 
 	DBGLOG(INIT, LOUD, "wlanUnregisterNotifier...\n");
 	wlanUnregisterNotifier();
+
+	update_driver_loaded_status(FALSE);
 
 	DBGLOG(INIT, INFO, "wlanRemove ok\n");
 }				/* end of wlanRemove() */
