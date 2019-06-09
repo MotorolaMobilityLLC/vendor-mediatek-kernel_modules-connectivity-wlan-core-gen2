@@ -2965,6 +2965,7 @@ nicRxWaitResponse(IN P_ADAPTER_T prAdapter,
 	WLAN_STATUS u4Status = WLAN_STATUS_SUCCESS;
 	BOOLEAN fgResult = TRUE;
 	ktime_t rStartTime, rCurTime;
+	P_RX_CTRL_T prRxCtrl;
 
 	DEBUGFUNC("nicRxWaitResponse");
 
@@ -2973,6 +2974,7 @@ nicRxWaitResponse(IN P_ADAPTER_T prAdapter,
 	ASSERT(ucPortIdx < 2);
 
 	rStartTime = ktime_get();
+	prRxCtrl = &prAdapter->rRxCtrl;
 
 	do {
 		/* Read the packet length */
@@ -3030,7 +3032,8 @@ nicRxWaitResponse(IN P_ADAPTER_T prAdapter,
 		wlanFWDLDebugAddRxStartTime(kalGetTimeTick());
 
 		HAL_PORT_RD(prAdapter,
-			    ucPortIdx == 0 ? MCR_WRDR0 : MCR_WRDR1, u4PktLen, pucRspBuffer, u4MaxRespBufferLen);
+				ucPortIdx == 0 ? MCR_WRDR0 : MCR_WRDR1, u4PktLen,
+				prRxCtrl->pucRxCoalescingBufPtr, u4MaxRespBufferLen);
 
 		wlanFWDLDebugAddRxDoneTime(kalGetTimeTick());
 
@@ -3040,6 +3043,7 @@ nicRxWaitResponse(IN P_ADAPTER_T prAdapter,
 			return WLAN_STATUS_FAILURE;
 		}
 
+		kalMemCopy(pucRspBuffer, prRxCtrl->pucRxCoalescingBufPtr, u4PktLen);
 		DBGLOG(RX, TRACE, "Dump Response buffer, length = 0x%x\n", u4PktLen);
 		DBGLOG_MEM8(RX, TRACE, pucRspBuffer, u4PktLen);
 

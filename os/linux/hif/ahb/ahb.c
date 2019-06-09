@@ -56,9 +56,9 @@
 #if !defined(CONFIG_MTK_CLKMGR)
 #include <linux/clk.h>
 #endif
-#if (__SIZEOF_LONG__  == 8)
-#define MTK_DMA_BUF_MEMCPY_SUP /* no virt_to_phys() use */
-#endif
+
+/* #define MTK_DMA_BUF_MEMCPY_SUP */ /* no virt_to_phys() use */
+
 /* #define HIF_DEBUG_SUP */
 /* #define HIF_DEBUG_SUP_TX */
 

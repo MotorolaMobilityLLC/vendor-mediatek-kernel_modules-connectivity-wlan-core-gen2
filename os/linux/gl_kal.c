@@ -62,9 +62,9 @@ int allocatedMemSize;
 *                           P R I V A T E   D A T A
 ********************************************************************************
 */
-#if (__SIZEOF_LONG__  == 8)
-#define MTK_DMA_BUF_MEMCPY_SUP
-#endif
+
+/* #define MTK_DMA_BUF_MEMCPY_SUP */
+
 static PVOID pvIoBuffer;
 
 #ifdef MTK_DMA_BUF_MEMCPY_SUP
