@@ -2465,6 +2465,30 @@ notify_resume:
 }
 #endif /* ! CONFIG_X86 */
 
+void reset_p2p_mode(P_GLUE_INFO_T prGlueInfo)
+{
+	PARAM_CUSTOM_P2P_SET_STRUCT_T rSetP2P;
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+
+	if (!prGlueInfo)
+		return;
+
+	rSetP2P.u4Enable = 0;
+	rSetP2P.u4Mode = 0;
+
+	p2pNetUnregister(prGlueInfo, FALSE);
+
+	rWlanStatus = kalIoctl(prGlueInfo, wlanoidSetP2pMode, (PVOID)&rSetP2P,
+		sizeof(PARAM_CUSTOM_P2P_SET_STRUCT_T), FALSE, FALSE, TRUE, FALSE, &u4BufLen);
+
+	if (rWlanStatus != WLAN_STATUS_SUCCESS)
+		prGlueInfo->prAdapter->fgIsP2PRegistered = FALSE;
+
+	DBGLOG(INIT, INFO,
+			"ret = 0x%08x\n", (uint32_t) rWlanStatus);
+}
+
 int set_p2p_mode_handler(struct net_device *netdev, PARAM_CUSTOM_P2P_SET_STRUCT_T p2pmode)
 {
 #if 0
@@ -2521,6 +2545,14 @@ int set_p2p_mode_handler(struct net_device *netdev, PARAM_CUSTOM_P2P_SET_STRUCT_
 		g_u4P2POnOffing = 0;
 		GLUE_RELEASE_THE_SPIN_LOCK(&g_p2p_lock);
 		return 0;
+	}
+
+	/* Resetting p2p mode if registered to avoid launch KE */
+	if (p2pmode.u4Enable
+		&& prGlueInfo->prAdapter->fgIsP2PRegistered
+		&& !kalIsResetting()) {
+		DBGLOG(INIT, WARN, "Resetting p2p mode\n");
+		reset_p2p_mode(prGlueInfo);
 	}
 
 	rSetP2P.u4Enable = p2pmode.u4Enable;
