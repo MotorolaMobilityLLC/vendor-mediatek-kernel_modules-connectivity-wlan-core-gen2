@@ -1539,6 +1539,7 @@ static int HifAhbPltmProbe(IN struct platform_device *PDev)
 	{
 		MTK_WCN_WMT_WLAN_CB_INFO WmtCb;
 
+		kalMemZero(&WmtCb, sizeof(MTK_WCN_WMT_WLAN_CB_INFO));
 		WmtCb.wlan_probe_cb = HifAhbProbe;
 		WmtCb.wlan_remove_cb = HifAhbRemove;
 		WmtCb.wlan_bus_cnt_get_cb = HifAhbBusCntGet;
