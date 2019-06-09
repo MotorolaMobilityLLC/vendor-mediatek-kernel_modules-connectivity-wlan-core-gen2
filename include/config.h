@@ -892,6 +892,17 @@
  */
 #define CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM  1
 
+/*------------------------------------------------------------------------------
+ * Flags of WPA3 support
+ *------------------------------------------------------------------------------
+ */
+
+#include <linux/version.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 4, 0)
+#define CFG_SUPPORT_WPA3	0
+#else
+#define CFG_SUPPORT_WPA3	1
+#endif
 
 /*******************************************************************************
 *                             D A T A   T Y P E S

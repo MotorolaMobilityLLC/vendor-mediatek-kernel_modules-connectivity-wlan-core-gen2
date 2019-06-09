@@ -243,9 +243,11 @@ saaFsmSteps(IN P_ADAPTER_T prAdapter,
 		case SAA_STATE_WAIT_AUTH4:
 			break;
 
+#if CFG_SUPPORT_WPA3
 		case SAA_STATE_EXTERNAL_AUTH:
-			kalExternalAuthRequest(prAdapter, NETWORK_TYPE_AIS_INDEX);
+			kalExternalAuthRequest(prAdapter);
 			break;
+#endif
 
 		case SAA_STATE_SEND_ASSOC1:
 			/* Do tasks in INIT STATE */

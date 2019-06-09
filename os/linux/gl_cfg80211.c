@@ -1437,6 +1437,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 	return 0;
 }
 
+#if CFG_SUPPORT_WPA3
 int mtk_cfg80211_external_auth(struct wiphy *wiphy,
 			 struct net_device *ndev,
 			 struct cfg80211_external_auth_params *params)
@@ -1461,6 +1462,7 @@ int mtk_cfg80211_external_auth(struct wiphy *wiphy,
 
 	return 0;
 }
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!

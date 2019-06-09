@@ -296,7 +296,9 @@ static struct cfg80211_ops mtk_wlan_ops = {
 	.sched_scan_stop = mtk_cfg80211_sched_scan_stop,
 #endif
 	.update_ft_ies = mtk_cfg80211_update_ft_ies,
+#if CFG_SUPPORT_WPA3
 	.external_auth = mtk_cfg80211_external_auth,
+#endif
 };
 
 
@@ -1211,7 +1213,7 @@ static void createWirelessDevice(void)
 			| WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL
 			| WIPHY_FLAG_SUPPORTS_SCHED_SCAN;
 #endif
-#if CFG_SUPPORT_AAA
+#if CFG_SUPPORT_AAA && CFG_SUPPORT_WPA3
 	prWiphy->flags |= WIPHY_FLAG_HAVE_AP_SME;
 #endif
 	prWiphy->regulatory_flags = REGULATORY_CUSTOM_REG;
@@ -1220,7 +1222,9 @@ static void createWirelessDevice(void)
 #endif /* CFG_SUPPORT_TDLS */
 	prWiphy->max_remain_on_channel_duration = 500;
 	prWiphy->mgmt_stypes = mtk_cfg80211_ais_default_mgmt_stypes;
+#if CFG_SUPPORT_WPA3
 	prWiphy->features |= NL80211_FEATURE_SAE;
+#endif
 	prWiphy->vendor_commands = mtk_wlan_vendor_ops;
 	prWiphy->n_vendor_commands = sizeof(mtk_wlan_vendor_ops) / sizeof(struct wiphy_vendor_command);
 	prWiphy->vendor_events = mtk_wlan_vendor_events;

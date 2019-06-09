@@ -4907,7 +4907,8 @@ VOID kalChangeSchedParams(P_GLUE_INFO_T prGlueInfo, BOOLEAN fgNormalThread)
 #endif
 }
 
-int kalExternalAuthRequest(IN P_ADAPTER_T prAdapter, IN uint8_t uBssIndex)
+#if CFG_SUPPORT_WPA3
+int kalExternalAuthRequest(IN P_ADAPTER_T prAdapter)
 {
 	struct cfg80211_external_auth_params params;
 	P_AIS_FSM_INFO_T prAisFsmInfo;
@@ -4943,3 +4944,4 @@ int kalExternalAuthRequest(IN P_ADAPTER_T prAdapter, IN uint8_t uBssIndex)
 	       (uint8_t) ((params.key_mgmt_suite >> 24) & 0x000000FF));
 	return cfg80211_external_auth_request(ndev, &params, GFP_KERNEL);
 }
+#endif

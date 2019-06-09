@@ -318,8 +318,10 @@ int mtk_cfg80211_update_ft_ies(struct wiphy *wiphy, struct net_device *dev,
 
 INT_32 mtk_cfg80211_process_str_cmd(P_GLUE_INFO_T prGlueInfo, PUINT_8 cmd, INT_32 len);
 
+#if CFG_SUPPORT_WPA3
 int mtk_cfg80211_external_auth(struct wiphy *wiphy, struct net_device *dev,
 			       struct cfg80211_external_auth_params *params);
+#endif
 
 /*******************************************************************************
 *                              F U N C T I O N S
