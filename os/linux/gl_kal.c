@@ -2351,7 +2351,8 @@ int tx_thread(void *data)
 		if (test_and_clear_bit(GLUE_FLAG_SUB_MOD_MULTICAST_BIT, &prGlueInfo->ulFlag))
 			p2pSetMulticastListWorkQueueWrapper(prGlueInfo);
 
-		if (test_and_clear_bit(GLUE_FLAG_FRAME_FILTER_BIT, &prGlueInfo->ulFlag)) {
+		if (test_and_clear_bit(GLUE_FLAG_FRAME_FILTER_BIT, &prGlueInfo->ulFlag) &&
+				prGlueInfo->prP2PInfo) {
 			p2pFuncUpdateMgmtFrameRegister(prGlueInfo->prAdapter,
 						       prGlueInfo->prP2PInfo->u4OsMgmtFrameFilter);
 		}
