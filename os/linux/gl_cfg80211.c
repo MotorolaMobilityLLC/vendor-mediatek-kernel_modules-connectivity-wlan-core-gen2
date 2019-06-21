@@ -1104,9 +1104,6 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 #endif
 	case NL80211_AUTHTYPE_SAE:
 		prGlueInfo->rWpaInfo.u4AuthAlg = IW_AUTH_ALG_SAE;
-		/* To prevent FWKs asks connect without AKM Suite */
-		eAuthMode = AUTH_MODE_WPA3_SAE;
-		u4AkmSuite = RSN_CIPHER_SUITE_SAE;
 		break;
 	default:
 		prGlueInfo->rWpaInfo.u4AuthAlg = IW_AUTH_ALG_OPEN_SYSTEM | IW_AUTH_ALG_SHARED_KEY;
@@ -1218,7 +1215,10 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 				break;
 #endif
 			case WLAN_AKM_SUITE_SAE:
-				eAuthMode = AUTH_MODE_WPA3_SAE;
+				if (sme->auth_type == NL80211_AUTHTYPE_SAE)
+					eAuthMode = AUTH_MODE_WPA3_SAE;
+				else
+					eAuthMode = AUTH_MODE_OPEN;
 				u4AkmSuite = RSN_CIPHER_SUITE_SAE;
 				break;
 

@@ -41,10 +41,6 @@ APPEND_VAR_IE_ENTRY_T txAssocReqIETable[] = {
 
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_HT_CAP), NULL, rlmReqGenerateHtCapIE}
 	,			/* 45 */
-#if CFG_RSN_MIGRATION
-	{(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN), NULL, rsnGenerateRSNIE}
-	,			/* 48 */
-#endif
 	{(ELEM_HDR_LEN + 1), NULL, assocGenerateMDIE}, /* Element ID: 54 */
 	{0, rsnCalculateFTIELen, rsnGenerateFTIE}, /* Element ID: 55 */
 #if CFG_SUPPORT_802_11K
