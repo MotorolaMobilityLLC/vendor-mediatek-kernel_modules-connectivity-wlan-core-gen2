@@ -2054,6 +2054,10 @@ int mtk_p2p_cfg80211_testmode_get_best_channel(IN struct wiphy *wiphy, IN void *
 	rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_2G4, TRUE,
 			     MAX_2G_BAND_CHN_NUM, &ucNumOfChannel, aucChannelList);
 
+#if CFG_WIFI_LATAM_HOTSPOT_FCC
+	DBGLOG(P2P, INFO, "u2CountryCode0x%04x,channelNum reduce %d to 11\n", prGlueInfo->prAdapter->rWifiVar.rConnSettings.u2CountryCode,ucNumOfChannel);
+	ucNumOfChannel = (ucNumOfChannel > 11) ? 11 : ucNumOfChannel;
+#endif
 	/*
 	 * 2. Calculate each channel's dirty score
 	 */
