@@ -164,6 +164,18 @@ ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/common/common_
 ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/common/common_main/linux/include
 ccflags-y += -DMTK_WCN_WMT_STP_EXP_SYMBOL_ABSTRACT
 
+ifeq ($(CONFIG_WIFI_LATAM_HOTSPOT_FCC), y)
+    ccflags-y += -DCFG_WIFI_LATAM_HOTSPOT_FCC=1
+else
+    ccflags-y += -DCFG_WIFI_LATAM_HOTSPOT_FCC=0
+endif
+
+ifeq ($(CONFIG_WIFI_LATAM_CHANNELS_NEW), y)
+    ccflags-y += -DCFG_WIFI_LATAM_CHANNELS_NEW=1
+else
+    ccflags-y += -DCFG_WIFI_LATAM_CHANNELS_NEW=0
+endif
+
 MODULE_NAME := wlan_drv_gen2
 #obj-$(CONFIG_MTK_COMBO_WIFI) += $(MODULE_NAME).o
 
