@@ -1914,9 +1914,10 @@ static INT_32 wlanNetRegister(struct wireless_dev *prWdev)
 static int wlanSetMacAddress(struct net_device *ndev, void *addr)
 {
 	P_GLUE_INFO_T prGlueInfo = NULL;
+	P_ADAPTER_T prAdapter = NULL;
+	P_BSS_INFO_T prAisBssInfo = NULL;
 	struct sockaddr *sa = NULL;
 	UINT_8 aucMacAddr[MAC_ADDR_LEN];
-	WLAN_STATUS rStatus;
 	UINT_32 u4BufLen = 0;
 
 	/**********************************************************************
@@ -1931,6 +1932,16 @@ static int wlanSetMacAddress(struct net_device *ndev, void *addr)
 		       (addr == NULL) ? 0 : 1);
 		return WLAN_STATUS_INVALID_DATA;
 	}
+	prAdapter = prGlueInfo->prAdapter;
+	if (!prAdapter) {
+		DBGLOG(INIT, ERROR, "Invalid prAdapter\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+	prAisBssInfo = &(prAdapter->rWifiVar.arBssInfo[NETWORK_TYPE_AIS_INDEX]);
+	if (!prAdapter) {
+		DBGLOG(INIT, ERROR, "Invalid prAisBssInfo\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
 
 	/**********************************************************************
 	 * 1. Change OwnMacAddr which will be updated to FW through           *
@@ -1940,18 +1951,13 @@ static int wlanSetMacAddress(struct net_device *ndev, void *addr)
 	 **********************************************************************
 	 */
 	sa = (struct sockaddr *)addr;
-	COPY_MAC_ADDR(aucMacAddr, sa->sa_data);
 
-	rStatus = kalIoctl(prGlueInfo, wlanoidSetRandomMac,
-			   (PVOID)(&aucMacAddr), sizeof(PARAM_MAC_ADDR_LEN),
-			   FALSE, FALSE, TRUE, FALSE, &u4BufLen);
+	COPY_MAC_ADDR(prAisBssInfo->aucOwnMacAddr, sa->sa_data);
+	COPY_MAC_ADDR(prGlueInfo->prDevHandler->dev_addr, sa->sa_data);
+	DBGLOG(INIT, INFO, "Set connect random macaddr to " MACSTR ".\n",
+	       MAC2STR(prAisBssInfo->aucOwnMacAddr));
 
-	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(REQ, ERROR, "set random mac failed:%x\n", rStatus);
-		return -EINVAL;
-	}
-
-	return rStatus;
+	return WLAN_STATUS_SUCCESS;
 }				/* end of wlanSetMacAddr() */
 
 /*----------------------------------------------------------------------------*/
