@@ -2118,6 +2118,9 @@ int p2pSetMACAddress(IN struct net_device *prDev, void *addr)
 	COPY_MAC_ADDR(prAdapter->rWifiVar.aucInterfaceAddress,
 		sa->sa_data);
 
+	/* Unset p2p net to update OwnMacAddr in FSM */
+	UNSET_NET_ACTIVE(prAdapter, NETWORK_TYPE_P2P_INDEX);
+
 	DBGLOG(INIT, INFO,
 		"Set random macaddr to " MACSTR ".\n",
 		MAC2STR(prBssInfo->aucOwnMacAddr));
