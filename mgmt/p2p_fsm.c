@@ -837,14 +837,10 @@ VOID p2pFsmRunEventFsmTimeout(IN P_ADAPTER_T prAdapter, IN ULONG ulParam)
 				if (prChnlReqInfo->fgIsChannelRequested) {
 					p2pFuncReleaseCh(prAdapter, prChnlReqInfo);
 				} else if (IS_NET_PWR_STATE_IDLE(prAdapter, NETWORK_TYPE_P2P_INDEX)) {
-#if !CFG_SUPPORT_RLM_ACT_NETWORK
+					DBGLOG(P2P, INFO, "Force DeactivateNetwork");
 					UNSET_NET_ACTIVE(prAdapter, NETWORK_TYPE_P2P_INDEX);
 					nicDeactivateNetwork(prAdapter, NETWORK_TYPE_P2P_INDEX);
-#else
-					rlmDeactivateNetwork(prAdapter, NETWORK_TYPE_P2P_INDEX, NET_ACTIVE_SRC_NONE);
-#endif
 				}
-
 			}
 			break;
 
