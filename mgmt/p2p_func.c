@@ -4054,11 +4054,9 @@ VOID p2pFuncDeauthComplete(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prP2pBssInf
 
 		p2pChangeMediaState(prAdapter, PARAM_MEDIA_STATE_DISCONNECTED);
 
-#if !CFG_SUPPORT_RLM_ACT_NETWORK
+		DBGLOG(P2P, TRACE, "Force DeactivateNetwork");
+		UNSET_NET_ACTIVE(prAdapter, NETWORK_TYPE_P2P_INDEX);
 		nicDeactivateNetwork(prAdapter, NETWORK_TYPE_P2P_INDEX);
-#else
-		rlmDeactivateNetwork(prAdapter, NETWORK_TYPE_P2P_INDEX, NET_ACTIVE_SRC_NONE);
-#endif
 
 		/* Release CNM channel */
 		nicUpdateBss(prAdapter, NETWORK_TYPE_P2P_INDEX);
