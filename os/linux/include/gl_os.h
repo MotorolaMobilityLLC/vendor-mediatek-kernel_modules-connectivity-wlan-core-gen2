@@ -973,6 +973,11 @@ INT_32 cfgRemoveProcEntry(void);
 
 typedef UINT_8 (*file_buf_handler) (PVOID ctx, const CHAR __user *buf, UINT_16 length);
 extern VOID register_file_buf_handler(file_buf_handler handler, PVOID ctx, UINT_8 ucType);
+extern const uint8_t *kalFindIeMatchMask(uint8_t eid,
+				const uint8_t *ies, int len,
+				const uint8_t *match,
+				int match_len, int match_offset,
+				const uint8_t *match_mask);
 
 /*******************************************************************************
 *                              F U N C T I O N S

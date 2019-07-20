@@ -76,6 +76,13 @@ WLAN_STATUS assocProcessRxAssocReqFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T 
 WLAN_STATUS assocSendReAssocRespFrame(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec);
 
 VOID assocGenerateMDIE(IN P_ADAPTER_T prAdapter, IN OUT P_MSDU_INFO_T prMsduInfo);
+
+UINT_32 assocCalculateConnIELen(IN P_ADAPTER_T prAdapter,
+				ENUM_NETWORK_TYPE_INDEX_T eNetTypeIndex,
+				IN P_STA_RECORD_T prStaRec);
+
+VOID assocGenerateConnIE(IN P_ADAPTER_T prAdapter,
+			 IN OUT P_MSDU_INFO_T prMsduInfo);
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************

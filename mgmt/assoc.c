@@ -35,6 +35,8 @@
 ********************************************************************************
 */
 APPEND_VAR_IE_ENTRY_T txAssocReqIETable[] = {
+	{0, assocCalculateConnIELen, assocGenerateConnIE}
+	, /* supplicant connect IE including rsn */
 #if CFG_SUPPORT_802_11K
 	{(ELEM_HDR_LEN + 2), NULL, rlmGerneratePowerCapIE}, /* Element ID: 33 */
 #endif
@@ -52,6 +54,8 @@ APPEND_VAR_IE_ENTRY_T txAssocReqIETable[] = {
 #endif
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_WMM_INFO), NULL, mqmGenerateWmmInfoIE}
 	,			/* 221 */
+	{(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN + 4), NULL, rsnGenerateRSNIE}
+	,			/* 48 */
 #if CFG_SUPPORT_MTK_SYNERGY
 	{(ELEM_HDR_LEN + ELEM_MIN_LEN_MTK_OUI), NULL, rlmGenerateMTKOuiIE}	/* 221 */
 #endif
@@ -350,15 +354,6 @@ static inline VOID assocBuildReAssocReqFrameCommonIEs(IN P_ADAPTER_T prAdapter, 
 		}
 #endif
 	}
-
-	if (IS_STA_IN_AIS(prStaRec) && prConnSettings->assocIeLen > 0) {
-		kalMemCopy(pucBuffer, prConnSettings->pucAssocIEs,
-			   prConnSettings->assocIeLen);
-		prMsduInfo->u2FrameLength += prConnSettings->assocIeLen;
-		pucBuffer += prConnSettings->assocIeLen;
-		DBGLOG_MEM8(SAA, INFO, prConnSettings->pucAssocIEs,
-			    prConnSettings->assocIeLen);
-	}
 }				/* end of assocBuildReAssocReqFrameCommonIEs() */
 
 /*----------------------------------------------------------------------------*/
@@ -475,7 +470,6 @@ WLAN_STATUS assocSendReAssocReqFrame(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T
 	UINT_16 u2EstimatedExtraIELen;
 	BOOLEAN fgIsReAssoc;
 	UINT_32 i;
-	P_CONNECTION_SETTINGS_T prConnSettings;
 	uint16_t txAssocReqIENums;
 
 	ASSERT(prStaRec);
@@ -540,11 +534,6 @@ WLAN_STATUS assocSendReAssocReqFrame(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T
 #endif
 
 	u2EstimatedFrameLen += u2EstimatedExtraIELen;
-
-	if (IS_STA_IN_AIS(prStaRec)) {
-		prConnSettings = &prAdapter->rWifiVar.rConnSettings;
-		u2EstimatedFrameLen += prConnSettings->assocIeLen;
-	}
 
 	/* Allocate a MSDU_INFO_T */
 	prMsduInfo = cnmMgtPktAlloc(prAdapter, u2EstimatedFrameLen);
@@ -637,6 +626,80 @@ WLAN_STATUS assocSendReAssocReqFrame(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T
 
 	return WLAN_STATUS_SUCCESS;
 }				/* end of assocSendReAssocReqFrame() */
+
+UINT_32 assocCalculateConnIELen(IN P_ADAPTER_T prAdapter,
+				ENUM_NETWORK_TYPE_INDEX_T eNetTypeIndex,
+				IN P_STA_RECORD_T prStaRec)
+{
+	P_CONNECTION_SETTINGS_T prConnSettings;
+	const uint8_t *rsnConn;
+
+	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
+
+	if (IS_STA_IN_AIS(prStaRec) && prConnSettings->assocIeLen > 0) {
+		rsnConn = kalFindIeMatchMask(ELEM_ID_RSN,
+					     prConnSettings->pucAssocIEs,
+					     prConnSettings->assocIeLen,
+					     NULL, 0, 0, NULL);
+		/* cut out RSN IE */
+		if (rsnConn)
+			return prConnSettings->assocIeLen -
+				ELEM_HDR_LEN - RSN_IE(rsnConn)->ucLength;
+		else
+			return prConnSettings->assocIeLen;
+	}
+
+	return 0;
+}
+
+VOID assocGenerateConnIE(IN P_ADAPTER_T prAdapter,
+			 IN OUT P_MSDU_INFO_T prMsduInfo)
+{
+	P_CONNECTION_SETTINGS_T prConnSettings;
+	P_STA_RECORD_T prStaRec;
+	uint8_t *pucBuffer, *cp;
+	const uint8_t *rsnConn;
+	uint32_t len, rsnIeLen;
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+	if (!prStaRec)
+		return;
+
+	pucBuffer = (uint8_t *) ((unsigned long)
+				 prMsduInfo->prPacket + (unsigned long)
+				 prMsduInfo->u2FrameLength);
+	cp = pucBuffer;
+	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
+
+	if (IS_STA_IN_AIS(prStaRec) && prConnSettings->assocIeLen > 0) {
+		rsnConn = kalFindIeMatchMask(ELEM_ID_RSN,
+				       prConnSettings->pucAssocIEs,
+				       prConnSettings->assocIeLen,
+				       NULL, 0, 0, NULL);
+
+		if (!rsnConn) {
+			kalMemCopy(cp, prConnSettings->pucAssocIEs,
+				   prConnSettings->assocIeLen);
+			cp += prConnSettings->assocIeLen;
+			goto dump;
+		}
+
+		rsnIeLen = ELEM_HDR_LEN + RSN_IE(rsnConn)->ucLength;
+
+		/* Copy data before RSN IE to assoc req */
+		len = rsnConn - prConnSettings->pucAssocIEs;
+		kalMemCopy(cp, prConnSettings->pucAssocIEs, len);
+		cp += len;
+
+		/* jump to the end of RSN IE and copy Remaing IEs*/
+		len = prConnSettings->assocIeLen - len - rsnIeLen;
+		kalMemCopy(cp, rsnConn + rsnIeLen, len);
+		cp += len;
+	}
+dump:
+	prMsduInfo->u2FrameLength += cp - pucBuffer;
+	DBGLOG_MEM8(SAA, INFO, pucBuffer, cp - pucBuffer);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
