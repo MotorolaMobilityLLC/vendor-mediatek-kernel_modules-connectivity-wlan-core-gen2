@@ -165,6 +165,31 @@ mtk_cfg80211_add_key(struct wiphy *wiphy,
 
 	rKey.u4KeyIndex = key_index;
 
+	if (params->cipher) {
+		switch (params->cipher) {
+		case WLAN_CIPHER_SUITE_WEP40:
+			rKey.ucCipher = CIPHER_SUITE_WEP40;
+			break;
+		case WLAN_CIPHER_SUITE_WEP104:
+			rKey.ucCipher = CIPHER_SUITE_WEP104;
+			break;
+		case WLAN_CIPHER_SUITE_TKIP:
+			rKey.ucCipher = CIPHER_SUITE_TKIP;
+			break;
+		case WLAN_CIPHER_SUITE_CCMP:
+			rKey.ucCipher = CIPHER_SUITE_CCMP;
+			break;
+		case WLAN_CIPHER_SUITE_SMS4:
+			rKey.ucCipher = CIPHER_SUITE_WPI;
+			break;
+		case WLAN_CIPHER_SUITE_AES_CMAC:
+			rKey.ucCipher = CIPHER_SUITE_BIP;
+			break;
+		default:
+			ASSERT(FALSE);
+		}
+	}
+
 	if (mac_addr) {
 		COPY_MAC_ADDR(rKey.arBSSID, mac_addr);
 		if ((rKey.arBSSID[0] == 0x00) && (rKey.arBSSID[1] == 0x00) && (rKey.arBSSID[2] == 0x00) &&
@@ -204,7 +229,7 @@ mtk_cfg80211_add_key(struct wiphy *wiphy,
 	}
 
 	rKey.u4KeyLength = params->key_len;
-	rKey.u4Length = ((ULONG)&(((P_P2P_PARAM_KEY_T) 0)->aucKeyMaterial)) + rKey.u4KeyLength;
+	rKey.u4Length = ((ULONG)&(((P_PARAM_KEY_T) 0)->aucKeyMaterial)) + rKey.u4KeyLength;
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetAddKey, &rKey, rKey.u4Length, FALSE, FALSE, TRUE, FALSE, &u4BufLen);
 
