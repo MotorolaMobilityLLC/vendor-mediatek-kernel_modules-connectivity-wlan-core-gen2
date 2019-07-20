@@ -332,6 +332,7 @@ typedef struct _PARAM_KEY_T {
 	UINT_32 u4KeyLength;	/*!< Key length in bytes */
 	PARAM_MAC_ADDRESS arBSSID;	/*!< MAC address */
 	PARAM_KEY_RSC rKeyRSC;
+	UINT_8 ucCipher;
 	UINT_8 aucKeyMaterial[32];	/*!< Key content by above setting */
 } PARAM_KEY_T, *P_PARAM_KEY_T;
 
