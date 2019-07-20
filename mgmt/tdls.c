@@ -1984,9 +1984,8 @@ TdlsTestFrameSend(ADAPTER_T *prAdapter, VOID *pvSetBuffer, UINT_32 u4SetBufferLe
 	UINT_32 u4PktLen, u4IeLen;
 
 	/* sanity check */
-	ASSERT(prAdapter);
-	ASSERT(pvSetBuffer);
-	ASSERT(pu4SetInfoLen);
+	if (!prAdapter || !pvSetBuffer || !pu4SetInfoLen)
+		return TDLS_STATUS_FAILURE;
 
 	DBGLOG(TDLS, INFO, "<tdls_fme> %s\n", __func__);
 
@@ -2398,9 +2397,8 @@ TdlsTestTdlsFrameSend(ADAPTER_T *prAdapter, VOID *pvSetBuffer, UINT_32 u4SetBuff
 	struct wireless_dev *prWdev;
 
 	/* sanity check */
-	ASSERT(prAdapter);
-	ASSERT(pvSetBuffer);
-	ASSERT(pu4SetInfoLen);
+	if (!prAdapter || !pvSetBuffer || !pu4SetInfoLen)
+		return TDLS_STATUS_FAILURE;
 
 	DBGLOG(TDLS, INFO, "<tdls_fme> %s\n", __func__);
 
