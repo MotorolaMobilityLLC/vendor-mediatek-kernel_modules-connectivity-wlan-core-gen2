@@ -2004,10 +2004,10 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 	struct nlattr *tb[WIFI_VENDOR_ATTR_ACS_MAX + 1];
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	bool ht_enabled, ht40_enabled, vht_enabled;
-	uint8_t ch_width;
+	uint8_t ch_width = 0;
 	enum P2P_VENDOR_ACS_HW_MODE hw_mode;
-	uint8_t *ch_list;
-	uint8_t ch_list_count;
+	uint8_t *ch_list = NULL;
+	uint8_t ch_list_count = 0;
 	uint8_t i;
 	uint32_t msg_size;
 	struct MSG_P2P_ACS_REQUEST *prMsgAcsRequest;
@@ -2106,6 +2106,12 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 				ch_list[i] =
 					ieee80211_frequency_to_channel(freq[i]);
 		}
+	}
+
+	if (!ch_list_count) {
+		DBGLOG(REQ, ERROR, "channel list count can NOT be 0\n");
+		rStatus = -EINVAL;
+		goto exit;
 	}
 
 	msg_size = sizeof(struct MSG_P2P_ACS_REQUEST) +
