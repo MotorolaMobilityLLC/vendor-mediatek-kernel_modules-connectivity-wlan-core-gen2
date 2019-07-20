@@ -4946,3 +4946,45 @@ int kalExternalAuthRequest(IN P_ADAPTER_T prAdapter)
 	return cfg80211_external_auth_request(ndev, &params, GFP_KERNEL);
 }
 #endif
+
+int kalMaskMemCmp(const void *cs, const void *ct,
+	const void *mask, size_t count)
+{
+	const uint8_t *su1, *su2, *su3;
+	int res = 0;
+
+	for (su1 = cs, su2 = ct, su3 = mask;
+		count > 0; ++su1, ++su2, ++su3, count--) {
+		if (mask != NULL)
+			res = ((*su1)&(*su3)) - ((*su2)&(*su3));
+		else
+			res = (*su1) - (*su2);
+		if (res != 0)
+			break;
+	}
+	return res;
+}
+
+const uint8_t *kalFindIeMatchMask(uint8_t eid,
+				const uint8_t *ies, int len,
+				const uint8_t *match,
+				int match_len, int match_offset,
+				const uint8_t *match_mask)
+{
+	/* match_offset can't be smaller than 2, unless match_len is
+	 * zero, in which case match_offset must be zero as well.
+	 */
+	if (WARN_ON((match_len && match_offset < 2) ||
+		(!match_len && match_offset)))
+		return NULL;
+	while (len >= 2 && len >= ies[1] + 2) {
+		if ((ies[0] == eid) &&
+			(ies[1] + 2 >= match_offset + match_len) &&
+			!kalMaskMemCmp(ies + match_offset,
+			match, match_mask, match_len))
+			return ies;
+		len -= ies[1] + 2;
+		ies += ies[1] + 2;
+	}
+	return NULL;
+}
