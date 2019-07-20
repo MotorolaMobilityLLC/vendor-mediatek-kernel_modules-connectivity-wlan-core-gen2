@@ -1323,19 +1323,21 @@ WLAN_STATUS nicActivateNetwork(IN P_ADAPTER_T prAdapter, IN ENUM_NETWORK_TYPE_IN
 	P_BSS_INFO_T prBssInfo;
 
 	ASSERT(prAdapter);
-	ASSERT(eNetworkTypeIdx < NETWORK_TYPE_INDEX_NUM);
+
+	if (eNetworkTypeIdx >= NETWORK_TYPE_INDEX_NUM) {
+		DBGLOG(NIC, WARN, "eNetworkTypeIdx: %d\n", eNetworkTypeIdx);
+		return WLAN_STATUS_FAILURE;
+	}
 
 	rCmdActivateCtrl.ucNetTypeIndex = (UINT_8) eNetworkTypeIdx;
 	rCmdActivateCtrl.ucActive = 1;
 	rCmdActivateCtrl.ucVersion = 1;
 
-	if (((UINT_8) eNetworkTypeIdx) < NETWORK_TYPE_INDEX_NUM) {
-		prBssInfo = &prAdapter->rWifiVar.arBssInfo[eNetworkTypeIdx];
-		COPY_MAC_ADDR(rCmdActivateCtrl.aucBssMacAddr,
-			      prBssInfo->aucOwnMacAddr);
-		prBssInfo->fg40mBwAllowed = FALSE;
-		prBssInfo->fgAssoc40mBwAllowed = FALSE;
-	}
+	prBssInfo = &prAdapter->rWifiVar.arBssInfo[eNetworkTypeIdx];
+	COPY_MAC_ADDR(rCmdActivateCtrl.aucBssMacAddr,
+		      prBssInfo->aucOwnMacAddr);
+	prBssInfo->fg40mBwAllowed = FALSE;
+	prBssInfo->fgAssoc40mBwAllowed = FALSE;
 
 	DBGLOG(NIC, INFO, "OwnMac=" MACSTR " BSSID=" MACSTR " NetType=%d\n",
 	       MAC2STR(prBssInfo->aucOwnMacAddr),
