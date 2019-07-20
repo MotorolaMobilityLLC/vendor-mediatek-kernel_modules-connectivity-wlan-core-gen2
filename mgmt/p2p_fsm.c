@@ -2812,8 +2812,7 @@ static void initAcsParams(IN P_ADAPTER_T prAdapter,
 			prMsgAcsRequest->fgIsHt40Enable,
 			prMsgAcsRequest->fgIsVhtEnable,
 			prMsgAcsRequest->eChnlBw,
-			prMsgAcsRequest->eHwMode,
-			prMsgAcsRequest->u4NumChannel);
+			prMsgAcsRequest->eHwMode);
 	if (prMsgAcsRequest->u4NumChannel) {
 		for (i = 0; i < prMsgAcsRequest->u4NumChannel; i++) {
 			prRfChannelInfo =
