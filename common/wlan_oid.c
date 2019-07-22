@@ -9092,18 +9092,38 @@ wlanoidSetRxPacketFilterPriv(
 WLAN_STATUS
 wlanoidSetTxPower(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen, OUT PUINT_32 pu4SetInfoLen)
 {
-	/* P_SET_TXPWR_CTRL_T pTxPwr = (P_SET_TXPWR_CTRL_T)pvSetBuffer; */
+	P_SET_TXPWR_CTRL_T pTxPwr = (P_SET_TXPWR_CTRL_T)pvSetBuffer;
 	/* UINT_32 i; */
 	WLAN_STATUS rStatus;
 
-	DEBUGFUNC("wlanoidSetTxPower");
-	DBGLOG(OID, LOUD, "\r\n");
+        CMD_TX_PWR_T rTxPwrTable[] = {
+            { 0x27, 0x27, { 0x00, 0x00 }, /*cTxPwr2G4Cck*/ /*cTxPwr2G4Dsss*/
+              0x24, 0x24, 0x24, 0x24, 0x24, 0x24, /*cTxPwr2G4OFDM*/
+              0x24, 0x24, 0x24, 0x24, 0x24, 0x24, /*cTxPwr2G4HT20*/
+              0x24, 0x24, 0x24, 0x24, 0x24, 0x24, /*cTxPwr2G4HT40*/
+              0x22, 0x22, 0x22, 0x22, 0x22, 0x22, /*cTxPwr5GOFDM*/
+              0x22, 0x22, 0x22, 0x20, 0x20, 0x20, /*cTxPwr5GHT20*/
+              0x22, 0x22, 0x22, 0x20, 0x20, 0x20 }, /*cTxPwr5GHT40*/ /* TX_PWR_PARAM_T */
+            { 0x1F, 0x1F, { 0x00, 0x00 }, /*cTxPwr2G4Cck*/ /*cTxPwr2G4Dsss*/
+              0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, /*cTxPwr2G4OFDM*/
+              0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, /*cTxPwr2G4HT20*/
+              0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, /*cTxPwr2G4HT40*/
+              0x22, 0x22, 0x22, 0x22, 0x22, 0x22, /*cTxPwr5GOFDM*/
+              0x22, 0x22, 0x22, 0x20, 0x20, 0x20, /*cTxPwr5GHT20*/
+              0x22, 0x22, 0x22, 0x20, 0x20, 0x20 }, /*cTxPwr5GHT40*/ /* TX_PWR_PARAM_T */
+        };
+
+        P_CMD_TX_PWR_T prTxPwrTable = rTxPwrTable;
+        rStatus = WLAN_STATUS_SUCCESS;
+
+	//DEBUGFUNC("wlanoidSetTxPower");
+	//DBGLOG(OID, LOUD, "\r\n");
 
 	ASSERT(prAdapter);
 	ASSERT(pvSetBuffer);
 
-#if 0
-	DBGLOG(OID, INFO, "c2GLegacyStaPwrOffset=%d\n", pTxPwr->c2GLegacyStaPwrOffset);
+#if 1
+	/*DBGLOG(OID, INFO, "c2GLegacyStaPwrOffset=%d\n", pTxPwr->c2GLegacyStaPwrOffset);
 	DBGLOG(OID, INFO, "c2GHotspotPwrOffset=%d\n", pTxPwr->c2GHotspotPwrOffset);
 	DBGLOG(OID, INFO, "c2GP2pPwrOffset=%d\n", pTxPwr->c2GP2pPwrOffset);
 	DBGLOG(OID, INFO, "c2GBowPwrOffset=%d\n", pTxPwr->c2GBowPwrOffset);
@@ -9117,8 +9137,17 @@ wlanoidSetTxPower(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4S
 		DBGLOG(OID, INFO, "acTxPwrLimit2G[%d]=%d\n", i, pTxPwr->acTxPwrLimit2G[i]);
 
 	for (i = 0; i < 4; i++)
-		DBGLOG(OID, INFO, "acTxPwrLimit5G[%d]=%d\n", i, pTxPwr->acTxPwrLimit5G[i]);
-#endif
+		DBGLOG(OID, INFO, "acTxPwrLimit5G[%d]=%d\n", i, pTxPwr->acTxPwrLimit5G[i]);*/
+        if (pTxPwr->c2GHotspotPwrOffset == 0) {
+            rStatus = nicUpdateTxPower(prAdapter, (P_CMD_TX_PWR_T) prTxPwrTable);
+            DBGLOG(OID, ERROR,"AAAAAAAAAAAAAAAAAAAAAAAAAAA wlanoidSetTxPower == 0\n");
+        } else if (pTxPwr->c2GHotspotPwrOffset == 1) {
+            rStatus = nicUpdateTxPower(prAdapter, (P_CMD_TX_PWR_T) (prTxPwrTable + 1));
+            DBGLOG(OID, ERROR,"AAAAAAAAAAAAAAAAAAAAAAAAAAAA wlanoidSetTxPower == 1\n");
+        }
+
+        DBGLOG(OID, ERROR, "AAAAAAAAAAAAAAAAAAAAAAAAAA status= 0x%lx \n", rStatus);
+#else
 
 	rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
 				      CMD_ID_SET_TXPWR_CTRL,	/* ucCID */
@@ -9134,7 +9163,7 @@ wlanoidSetTxPower(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4S
 	    );
 
 	ASSERT(rStatus == WLAN_STATUS_PENDING);
-
+#endif
 	return rStatus;
 
 }
