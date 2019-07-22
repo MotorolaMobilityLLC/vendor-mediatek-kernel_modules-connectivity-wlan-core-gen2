@@ -77,7 +77,6 @@
 #define CMD_ADD_TS          "addts"
 #define CMD_DELETE_TS		"delts"
 #define CMD_FW_PARAM            "set_fw_param "
-//#define CMD_LOWER_WIFI_POWER            "lower_wifi_power "
 
 /* miracast related definition */
 #define MIRACAST_MODE_OFF	0
@@ -2884,7 +2883,7 @@ _priv_set_ints(IN struct net_device *prNetDev,
 
 		if (u4CmdLen > 4)
 			return -EINVAL;
-		if (copy_from_user(setting, prIwReqData->data.pointer, u4CmdLen))
+		if (copy_from_user(setting, prIwReqData->data.pointer, u4CmdLen * sizeof(INT_32)))
 			return -EFAULT;
 #if !(CFG_SUPPORT_TX_POWER_BACK_OFF)
 		prTxpwr = &prGlueInfo->rTxPwr;
@@ -2987,8 +2986,16 @@ _priv_set_ints(IN struct net_device *prNetDev,
 			} else if (setting[1] <= 4)
 				prTxpwr->acTxPwrLimit5G[setting[1] - 1] = setting[2];
 		} else if (setting[0] == 4 && prIwReqData->data.length == 2) {
-			if (setting[1] == 0)
+			if (setting[1] == 0) {
 				wlanDefTxPowerCfg(prGlueInfo->prAdapter);
+                        }
+
+                        if (setting[1] == 1) {
+                            prTxpwr->c2GHotspotPwrOffset = 1;
+                        } else {
+                            prTxpwr->c2GHotspotPwrOffset = 0;
+                        }
+
 			rStatus = kalIoctl(prGlueInfo,
 				wlanoidSetTxPower,
 				prTxpwr,
@@ -5216,58 +5223,6 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 		else if (!strncasecmp(pcCommand, CMD_FW_PARAM, strlen(CMD_FW_PARAM))) {
 			kalIoctl(prGlueInfo, wlanoidSetFwParam, (PVOID)(pcCommand + 13),
 				 i4TotalLen - 13, FALSE, FALSE, FALSE, FALSE, &i4BytesWritten);
-#if 0
-                } else if (!strncasecmp(pcCommand, CMD_LOWER_WIFI_POWER , strlen(CMD_LOWER_WIFI_POWER))) {
-                        DBGLOG(RLM, ERROR, "AAAAAAAAAAAAAAAAAAAAA in driver command");
-
-                        P_REG_INFO_T prRegInfo = &prGlueInfo->rRegInfo;
-                        WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
-                        UINT8 cStartTxBackOff = 0;
-                        BOOLEAN bFgForceExecution = TRUE;
-
-                        pcCommand += (strlen(CMD_LOWER_WIFI_POWER) + 1);
-                        UINT32 TxPwrBackOffParam = 0;
-
-                        cStartTxBackOff = (*pcCommand) == '1' ? 1 : 0;
-
-                        if ((prRegInfo->bTxPowerLimitEnable2G == TRUE)
-                                || (prRegInfo->bTxPowerLimitEnable5G == TRUE)
-                                || bFgForceExecution) {
-                                if (cStartTxBackOff == TRUE) {
-                                        UINT_8 ucTxBackOffMaxPower = 0x1C;
-
-                                        if (ucTxBackOffMaxPower != 0) {
-                                                prRegInfo->cTxBackOffMaxPower2G = ucTxBackOffMaxPower;
-                                                prRegInfo->bTxPowerLimitEnable2G = 1;
-                                        }
-                                        TxPwrBackOffParam |= prRegInfo->bTxPowerLimitEnable2G;
-                                        TxPwrBackOffParam |= (prRegInfo->cTxBackOffMaxPower2G) << 8;
-                                        if (ucTxBackOffMaxPower != 0) {
-                                                prRegInfo->cTxBackOffMaxPower5G = 0;
-                                                prRegInfo->bTxPowerLimitEnable5G = 0;
-                                        }
-                                        TxPwrBackOffParam |= prRegInfo->bTxPowerLimitEnable5G << 16;
-                                        TxPwrBackOffParam |= (ULONG)(prRegInfo->cTxBackOffMaxPower5G) << 24;
-                                        DBGLOG(RLM, INFO,
-                                               "Start BackOff: TxPwrBackOffParam=0x%lx\n",
-                                               TxPwrBackOffParam);
-                                } else {
-
-                                        TxPwrBackOffParam = 0; /* First byte is start/stop */
-                                        DBGLOG(RLM, INFO,
-                                               "Stop BackOff: TxPwrBackOffParam=0x%lx\n",
-                                               TxPwrBackOffParam);
-                                }
-                                rStatus = nicTxPowerBackOff(prGlueInfo->prAdapter, TxPwrBackOffParam);
-
-                                if (rStatus == WLAN_STATUS_PENDING) {
-                                    DBGLOG(RLM, ERROR, "AAAAAAAAAAAAAAAAAAAAAAa SET_TX_POWER: status pending \n");
-                                } else {
-                                    DBGLOG(RLM, ERROR, "AAAAAAAAAAAAAAAAAAAAAAa SET_TX_POWER: status error \n");
-                                }
-                        }
-                        i4BytesWritten = 0;
-#endif
 		} else if (!strncasecmp(pcCommand, CMD_GET_WIFI_TYPE, strlen(CMD_GET_WIFI_TYPE)))
 			i4BytesWritten = priv_driver_get_wifi_type(prNetDev, pcCommand, i4TotalLen);
 		else
