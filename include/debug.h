@@ -260,7 +260,7 @@ extern PINT_8 g_buf_p;
 #else
 #define ASSERT(_exp) \
 	{ \
-		if (!(_exp) && !fgIsBusAccessFailed) { \
+		if (!(_exp)) { \
 			LOG_FUNC("Assertion failed: %s:%d %s\n", __FILE__, __LINE__, #_exp); \
 			kalBreakPoint(); \
 		} \
@@ -269,7 +269,7 @@ extern PINT_8 g_buf_p;
 
 #define ASSERT_REPORT(_exp, _fmt) \
 	{ \
-		if (!(_exp) && !fgIsBusAccessFailed) { \
+		if (!(_exp)) { \
 			LOG_FUNC("Assertion failed: %s:%d %s\n", __FILE__, __LINE__, #_exp); \
 			LOG_FUNC _fmt; \
 			kalBreakPoint(); \
@@ -301,7 +301,7 @@ extern PINT_8 g_buf_p;
 #if defined(LINUX)		/* For debugging in Linux w/o GDB */
 #define ASSERT(_exp) \
 	{ \
-		if (!(_exp) && !fgIsBusAccessFailed) { \
+		if (!(_exp)) { \
 			LOG_FUNC("Assertion failed: %s:%d (%s)\n", __FILE__, __LINE__, #_exp); \
 			kalBreakPoint(); \
 		} \
@@ -309,7 +309,7 @@ extern PINT_8 g_buf_p;
 
 #define ASSERT_REPORT(_exp, _fmt) \
 	{ \
-		if (!(_exp) && !fgIsBusAccessFailed) { \
+		if (!(_exp)) { \
 			LOG_FUNC("Assertion failed: %s:%d (%s)\n", __FILE__, __LINE__, #_exp); \
 			LOG_FUNC _fmt; \
 			kalBreakPoint(); \
@@ -320,7 +320,7 @@ extern PINT_8 g_buf_p;
 #define UNICODE_TEXT(_msg)  TEXT(_msg)
 #define ASSERT(_exp) \
 	{ \
-		if (!(_exp) && !fgIsBusAccessFailed) { \
+		if (!(_exp)) { \
 			TCHAR rUbuf[256]; \
 			kalBreakPoint(); \
 			_stprintf(rUbuf, TEXT("Assertion failed: %s:%d %s\n"), \
@@ -331,7 +331,7 @@ extern PINT_8 g_buf_p;
 
 #define ASSERT_REPORT(_exp, _fmt) \
 	{ \
-		if (!(_exp) && !fgIsBusAccessFailed) { \
+		if (!(_exp)) { \
 			TCHAR rUbuf[256]; \
 			kalBreakPoint(); \
 			_stprintf(rUbuf, TEXT("Assertion failed: %s:%d %s\n"), \
@@ -342,14 +342,14 @@ extern PINT_8 g_buf_p;
 #else
 #define ASSERT(_exp) \
 	{ \
-		if (!(_exp) && !fgIsBusAccessFailed) { \
+		if (!(_exp)) { \
 			kalBreakPoint(); \
 		} \
 	}
 
 #define ASSERT_REPORT(_exp, _fmt) \
 	{ \
-		if (!(_exp) && !fgIsBusAccessFailed) { \
+		if (!(_exp)) { \
 			kalBreakPoint(); \
 		} \
 	}
@@ -358,14 +358,14 @@ extern PINT_8 g_buf_p;
 #else
 #define ASSERT(_exp) \
 	{ \
-		if (!(_exp) && !fgIsBusAccessFailed) { \
+		if (!(_exp)) { \
 			LOG_FUNC("Warning at %s:%d (%s)\n", __func__, __LINE__, #_exp); \
 		} \
 	}
 
 #define ASSERT_REPORT(_exp, _fmt) \
 	{ \
-		if (!(_exp) && !fgIsBusAccessFailed) { \
+		if (!(_exp)) { \
 			LOG_FUNC("Warning at %s:%d (%s)\n", __func__, __LINE__, #_exp); \
 			LOG_FUNC _fmt; \
 		} \
