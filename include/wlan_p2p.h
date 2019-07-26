@@ -85,16 +85,6 @@ typedef struct _PARAM_P2P_TERMINATE_SD_PHASE {
 	PARAM_MAC_ADDRESS rPeerAddr;
 } PARAM_P2P_TERMINATE_SD_PHASE, *P_PARAM_P2P_TERMINATE_SD_PHASE;
 
-/*! \brief Key mapping of BSSID */
-typedef struct _P2P_PARAM_KEY_T {
-	UINT_32 u4Length;	/*!< Length of structure */
-	UINT_32 u4KeyIndex;	/*!< KeyID */
-	UINT_32 u4KeyLength;	/*!< Key length in bytes */
-	PARAM_MAC_ADDRESS arBSSID;	/*!< MAC address */
-	PARAM_KEY_RSC rKeyRSC;
-	UINT_8 aucKeyMaterial[32];	/*!< Key content by above setting */
-} P2P_PARAM_KEY_T, *P_P2P_PARAM_KEY_T;
-
 /*******************************************************************************
 *                           P R I V A T E   D A T A
 ********************************************************************************

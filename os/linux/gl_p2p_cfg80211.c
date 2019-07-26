@@ -131,13 +131,13 @@ int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 	INT_32 i4Rslt = -EINVAL;
 	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
 	UINT_32 u4BufLen = 0;
-	P2P_PARAM_KEY_T rKey;
+	PARAM_KEY_T rKey;
 
 	ASSERT(wiphy);
 
 	prGlueInfo = *((P_GLUE_INFO_T *) wiphy_priv(wiphy));
 
-	kalMemZero(&rKey, sizeof(P2P_PARAM_KEY_T));
+	kalMemZero(&rKey, sizeof(PARAM_KEY_T));
 
 	DBGLOG(P2P, INFO, "--> %s()\n", __func__);
 
@@ -175,7 +175,7 @@ int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 		kalMemCopy(rKey.aucKeyMaterial, params->key, params->key_len);
 	}
 	rKey.u4KeyLength = params->key_len;
-	rKey.u4Length = ((ULONG)&(((P_P2P_PARAM_KEY_T) 0)->aucKeyMaterial)) + rKey.u4KeyLength;
+	rKey.u4Length = ((ULONG)&(((P_PARAM_KEY_T) 0)->aucKeyMaterial)) + rKey.u4KeyLength;
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetAddP2PKey, &rKey, rKey.u4Length, FALSE, FALSE, TRUE, TRUE, &u4BufLen);
 	if (rStatus == WLAN_STATUS_SUCCESS)
