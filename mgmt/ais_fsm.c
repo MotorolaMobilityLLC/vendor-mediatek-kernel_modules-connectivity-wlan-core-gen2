@@ -1528,6 +1528,13 @@ VOID aisFsmSteps(IN P_ADAPTER_T prAdapter, ENUM_AIS_STATE_T eNextState)
 		case AIS_STATE_ONLINE_SCAN:
 		case AIS_STATE_LOOKING_FOR:
 
+			/* SCAN should use dev mac to send/recv probe request/response.
+			 * If it's inactive scan, we use dev mac to activate network.
+			 */
+			if (!IS_NET_ACTIVE(prAdapter, NETWORK_TYPE_AIS_INDEX))
+				COPY_MAC_ADDR(prAisBssInfo->aucOwnMacAddr,
+					      prAdapter->rWifiVar.aucMacAddress);
+
 #if !CFG_SUPPORT_RLM_ACT_NETWORK
 			if (!IS_NET_ACTIVE(prAdapter, NETWORK_TYPE_AIS_INDEX)) {
 				SET_NET_ACTIVE(prAdapter, NETWORK_TYPE_AIS_INDEX);
