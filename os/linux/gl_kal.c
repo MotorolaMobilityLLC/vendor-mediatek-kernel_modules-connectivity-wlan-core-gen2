@@ -1305,12 +1305,24 @@ kalIndicateStatusAndComplete(IN P_GLUE_INFO_T prGlueInfo, IN WLAN_STATUS eStatus
 		/* indicate AIS Jion fail  event
 		*if (prGlueInfo->prDevHandler->ieee80211_ptr->sme_state == CFG80211_SME_CONNECTING)
 		*/
-		cfg80211_connect_result(prGlueInfo->prDevHandler,
+		if (prBssDesc && u2StatusCode
+		    && u2StatusCode != STATUS_CODE_AUTH_TIMEOUT
+		    && u2StatusCode != STATUS_CODE_ASSOC_TIMEOUT)
+			cfg80211_connect_result(prGlueInfo->prDevHandler,
 					arBssid,
 					prGlueInfo->aucReqIe,
 					prGlueInfo->u4ReqIeLength,
 					prGlueInfo->aucRspIe,
-					prGlueInfo->u4RspIeLength, u2StatusCode, GFP_KERNEL);
+					prGlueInfo->u4RspIeLength,
+					u2StatusCode, GFP_KERNEL);
+		else
+			cfg80211_connect_result(prGlueInfo->prDevHandler,
+					arBssid,
+					prGlueInfo->aucReqIe,
+					prGlueInfo->u4ReqIeLength,
+					prGlueInfo->aucRspIe,
+					prGlueInfo->u4RspIeLength,
+					STATUS_CODE_AUTH_TIMEOUT, GFP_KERNEL);
 		prGlueInfo->eParamMediaStateIndicated = PARAM_MEDIA_STATE_DISCONNECTED;
 		break;
 
