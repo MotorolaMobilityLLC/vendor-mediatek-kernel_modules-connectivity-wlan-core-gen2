@@ -2990,7 +2990,7 @@ wlanoidQueryPmkid(IN P_ADAPTER_T prAdapter,
 WLAN_STATUS
 wlanoidSetPmkid(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen, OUT PUINT_32 pu4SetInfoLen)
 {
-	UINT_32 i, j;
+	UINT_32 i, j = 0;
 	P_PARAM_PMKID_T prPmkid;
 	P_AIS_SPECIFIC_BSS_INFO_T prAisSpecBssInfo;
 
@@ -3061,7 +3061,8 @@ wlanoidSetPmkid(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4Set
 		}
 	}
 #endif
-	if (prAdapter->rWifiVar.rConnSettings.fgOkcEnabled) {
+	if (prAdapter->rWifiVar.rConnSettings.fgOkcEnabled &&
+	    prPmkid->u4BSSIDInfoCount > 0) {
 		P_BSS_DESC_T prBssDesc = prAdapter->rWifiVar.rAisFsmInfo.prTargetBssDesc;
 		P_UINT_8 pucPmkID = NULL;
 
