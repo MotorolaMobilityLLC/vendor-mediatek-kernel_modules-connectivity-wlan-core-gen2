@@ -2324,6 +2324,10 @@ typedef struct _WAPI_INFO_ELEM_T {
 	UINT_16 u2Version;
 	UINT_16 u2AuthKeyMgtSuiteCount;
 	UCHAR aucAuthKeyMgtSuite1[4];
+	UINT_16 u2PairwiseKeyCipherSuiteCount;
+	UINT_32 au4PairwiseKeyCipherSuite;
+	UINT_32 u4GroupKeyCipherSuite;
+	UINT_16 u2WapiCap;
 } __KAL_ATTRIB_PACKED__ WAPI_INFO_ELEM_T, *P_WAPI_INFO_ELEM_T;
 /* Information Elements from MTK Synergies.*/
 typedef struct _IE_MTK_OUI_T {
