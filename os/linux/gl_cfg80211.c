@@ -1138,6 +1138,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 	}
 
 	if (sme->crypto.n_ciphers_pairwise) {
+		DBGLOG(RSN, INFO, "cipher pairwise (%x)\n", sme->crypto.ciphers_pairwise[0]);
 		prGlueInfo->prAdapter->rWifiVar.rConnSettings.rRsnInfo.au4PairwiseKeyCipherSuite[0] =
 		    sme->crypto.ciphers_pairwise[0];
 		switch (sme->crypto.ciphers_pairwise[0]) {
@@ -1163,6 +1164,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 	}
 
 	if (sme->crypto.cipher_group) {
+		DBGLOG(RSN, INFO, "cipher group (%x)\n", sme->crypto.cipher_group);
 		prGlueInfo->prAdapter->rWifiVar.rConnSettings.rRsnInfo.u4GroupKeyCipherSuite = sme->crypto.cipher_group;
 		switch (sme->crypto.cipher_group) {
 		case WLAN_CIPHER_SUITE_WEP40:
@@ -1297,6 +1299,15 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 		PUINT_8 prDesiredIE = NULL;
 		PUINT_8 pucIEStart = (PUINT_8)sme->ie;
 
+#if CFG_SUPPORT_WPS2
+		prDesiredIE = (PUINT_8) kalFindIeMatchMask(ELEM_ID_VENDOR,
+				pucIEStart, sme->ie_len, NULL, 0, 0, NULL);
+		/* If it's vendor IE, check if it's WPS IE. */
+		if (prDesiredIE && prDesiredIE[1] >= 4) {
+			if (memcmp(&prDesiredIE[2], "\x00\x50\xf2\x04", 4) == 0)
+				prGlueInfo->fgWpsActive = TRUE;
+		}
+#endif
 #if CFG_SUPPORT_WAPI
 		if (wextSrchDesiredWAPIIE(pucIEStart, sme->ie_len, (PUINT_8 *) &prDesiredIE)) {
 			rStatus = kalIoctl(prGlueInfo,
@@ -1363,7 +1374,6 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 	for (i = 0; i < MAX_NUM_SUPPORTED_AKM_SUITES; i++) {
 		prEntry = &prMib->
 				dot11RSNAConfigAuthenticationSuitesTable[i];
-		DBGLOG(REQ, INFO, "%d %d\n", prEntry->dot11RSNAConfigAuthenticationSuite, u4AkmSuite);
 		if (prEntry->dot11RSNAConfigAuthenticationSuite ==
 		    u4AkmSuite)
 			prEntry->dot11RSNAConfigAuthenticationSuiteEnabled =
