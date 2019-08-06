@@ -1,6 +1,4 @@
 /*
-* Copyright (C) 2016 MediaTek Inc.
-*
 * This program is free software; you can redistribute it and/or modify
 * it under the terms of the GNU General Public License version 2 as
 * published by the Free Software Foundation.
@@ -1822,7 +1820,6 @@ VOID nicRxProcessMgmtPacket(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb)
 #endif
 			nicRxReturnRFB(prAdapter, prSwRfb);
 			RX_INC_CNT(prRxCtrl, RX_DROP_TOTAL_COUNT);
-			GL_RESET_TRIGGER(prAdapter, RST_FLAG_DO_CORE_DUMP);
 			return;
 		}
 #endif
