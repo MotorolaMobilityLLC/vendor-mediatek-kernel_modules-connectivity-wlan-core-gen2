@@ -719,8 +719,8 @@ BOOLEAN kalDevRegRead(IN GLUE_INFO_T *GlueInfo, IN UINT_32 RegOffset, OUT UINT_3
 	ASSERT(GlueInfo);
 	ASSERT(pu4Value);
 
-	if (GlueInfo == NULL) {
-		DBGLOG(HAL, ERROR, "GlueInfo is NULL.");
+	if (GlueInfo == NULL || pu4Value == NULL) {
+		DBGLOG(HAL, ERROR, "Passing NULL pointer.");
 		return FALSE;
 	}
 
@@ -1252,6 +1252,10 @@ static irqreturn_t HifAhbISR(IN int Irq, IN void *Arg)
 	/* Init */
 	IsrCnt++;
 	ASSERT(prNetDevice);
+
+	if (!prNetDevice)
+		return IRQ_HANDLED;
+
 	GlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDevice));
 	ASSERT(GlueInfo);
 
