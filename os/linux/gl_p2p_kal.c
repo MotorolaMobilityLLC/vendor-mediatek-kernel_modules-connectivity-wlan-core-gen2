@@ -1243,7 +1243,6 @@ kalP2PGCIndicateConnectionStatus(IN P_GLUE_INFO_T prGlueInfo,
 VOID kalP2PGOStationUpdate(IN P_GLUE_INFO_T prGlueInfo, IN P_STA_RECORD_T prCliStaRec, IN BOOLEAN fgIsNew)
 {
 	P_GL_P2P_INFO_T prP2pGlueInfo = (P_GL_P2P_INFO_T) NULL;
-	struct station_info rStationInfo;
 
 	do {
 		if ((prGlueInfo == NULL) || (prCliStaRec == NULL))
@@ -1252,6 +1251,9 @@ VOID kalP2PGOStationUpdate(IN P_GLUE_INFO_T prGlueInfo, IN P_STA_RECORD_T prCliS
 		prP2pGlueInfo = prGlueInfo->prP2PInfo;
 
 		if (fgIsNew) {
+			struct station_info rStationInfo;
+
+			kalMemZero(&rStationInfo, sizeof(rStationInfo));
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 4, 0))
 			rStationInfo.filled = STATION_INFO_ASSOC_REQ_IES;
 #endif
