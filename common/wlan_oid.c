@@ -1615,6 +1615,7 @@ wlanoidSetAuthMode(IN P_ADAPTER_T prAdapter,
 	case AUTH_MODE_WPA2_FT:
 	case AUTH_MODE_WPA2_FT_PSK:
 	case AUTH_MODE_WPA3_SAE:
+	case AUTH_MODE_WPA3_OWE:
 		/* infrastructure mode only */
 		if (prAdapter->rWifiVar.rConnSettings.eOPMode != NET_TYPE_INFRA)
 			return WLAN_STATUS_NOT_ACCEPTED;
@@ -2356,6 +2357,47 @@ _wlanoidSetAddKey(IN P_ADAPTER_T prAdapter,
 	kalMemCopy(prCmdKey->aucKeyMaterial, (PUINT_8) prNewKey->aucKeyMaterial, prCmdKey->ucKeyLen);
 
 	prCmdKey->ucAlgorithmId = ucAlgorithmId;
+	if (prNewKey->u4KeyLength == 5) {
+		prCmdKey->ucAlgorithmId = CIPHER_SUITE_WEP40;
+	} else if (prNewKey->u4KeyLength == 13) {
+		prCmdKey->ucAlgorithmId = CIPHER_SUITE_WEP104;
+	} else if (prNewKey->u4KeyLength == 16) {
+		if ((ucAlgorithmId != CIPHER_SUITE_CCMP) &&
+		    (prAdapter->rWifiVar.rConnSettings.eAuthMode < AUTH_MODE_WPA))
+			prCmdKey->ucAlgorithmId = CIPHER_SUITE_WEP128;
+		else {
+#if CFG_SUPPORT_802_11W
+			if (prCmdKey->ucKeyId >= 4) {
+				P_AIS_SPECIFIC_BSS_INFO_T prAisSpecBssInfo;
+
+				prCmdKey->ucAlgorithmId = CIPHER_SUITE_BIP;
+				prAisSpecBssInfo = &prAdapter->rWifiVar.rAisSpecificBssInfo;
+				prAisSpecBssInfo->fgBipKeyInstalled = TRUE;
+			} else
+#endif
+				prCmdKey->ucAlgorithmId = CIPHER_SUITE_CCMP;
+			if (rsnCheckPmkidCandicate(prAdapter)) {
+				P_AIS_SPECIFIC_BSS_INFO_T prAisSpecBssInfo;
+
+				prAisSpecBssInfo = &prAdapter->rWifiVar.rAisSpecificBssInfo;
+				DBGLOG(RSN, TRACE,
+				       "Add key: Prepare a timer to indicate candidate PMKID Candidate\n");
+				cnmTimerStopTimer(prAdapter, &prAisSpecBssInfo->rPreauthenticationTimer);
+				cnmTimerStartTimer(prAdapter, &prAisSpecBssInfo->rPreauthenticationTimer,
+						   SEC_TO_MSEC(WAIT_TIME_IND_PMKID_CANDICATE_SEC));
+			}
+		}
+	} else if (prNewKey->u4KeyLength == 32) {
+		if (prAdapter->rWifiVar.rConnSettings.eAuthMode == AUTH_MODE_WPA_NONE) {
+			if (prAdapter->rWifiVar.rConnSettings.eEncStatus == ENUM_ENCRYPTION2_ENABLED)
+				prCmdKey->ucAlgorithmId = CIPHER_SUITE_TKIP;
+			else if (prAdapter->rWifiVar.rConnSettings.eEncStatus == ENUM_ENCRYPTION3_ENABLED) {
+				prCmdKey->ucAlgorithmId = CIPHER_SUITE_CCMP;
+				prCmdKey->ucKeyLen = CCMP_KEY_LEN;
+			}
+		} else
+			prCmdKey->ucAlgorithmId = CIPHER_SUITE_TKIP;
+	}
 	prAdapter->rWifiVar.rAisSpecificBssInfo.ucKeyAlgorithmId = prCmdKey->ucAlgorithmId;
 
 	DBGLOG(RSN, TRACE, "prCmdKey->ucAlgorithmId=%d, key len=%d\n",
