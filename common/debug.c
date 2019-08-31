@@ -480,7 +480,7 @@ VOID wlanPktStatusDebugDumpInfo(P_ADAPTER_T prAdapter)
 
 
 					offsetMsg += kalSnprintf(pucMsg + offsetMsg
-					, PKT_STATUS_MSG_LENGTH
+					, (PKT_STATUS_MSG_LENGTH - offsetMsg)
 					, "%d,%02x,%x,%d,%d "
 					, prPktInfo->u1Type
 					, prPktInfo->u2IpId
@@ -491,7 +491,7 @@ VOID wlanPktStatusDebugDumpInfo(P_ADAPTER_T prAdapter)
 				} else {
 					/*rx format*/
 					offsetMsg += kalSnprintf(pucMsg + offsetMsg
-					, PKT_STATUS_MSG_LENGTH
+					, (PKT_STATUS_MSG_LENGTH - offsetMsg)
 					, "%d,%02x,%x "
 					, prPktInfo->u1Type
 					, prPktInfo->u2IpId
