@@ -289,6 +289,7 @@ typedef struct _GL_WPA_INFO_T {
 	BOOLEAN fgPrivacyInvoke;
 #if CFG_SUPPORT_802_11W
 	UINT_32 u4Mfp;
+	UINT_8 ucRSNMfpCap;
 #endif
 } GL_WPA_INFO_T, *P_GL_WPA_INFO_T;
 

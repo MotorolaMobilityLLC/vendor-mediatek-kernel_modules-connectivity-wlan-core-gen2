@@ -1096,18 +1096,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 	prGlueInfo->rWpaInfo.u4AuthAlg = IW_AUTH_ALG_OPEN_SYSTEM;
 #if CFG_SUPPORT_802_11W
 	prGlueInfo->rWpaInfo.u4Mfp = IW_AUTH_MFP_DISABLED;
-	switch (sme->mfp) {
-	case NL80211_MFP_NO:
-		prGlueInfo->rWpaInfo.u4Mfp = IW_AUTH_MFP_DISABLED;
-		break;
-	case NL80211_MFP_REQUIRED:
-		prGlueInfo->rWpaInfo.u4Mfp = IW_AUTH_MFP_REQUIRED;
-		break;
-	default:
-		prGlueInfo->rWpaInfo.u4Mfp = IW_AUTH_MFP_DISABLED;
-		break;
-	}
-	DBGLOG(RSN, TRACE, "MFP=%d\n", prGlueInfo->rWpaInfo.u4Mfp);
+	prGlueInfo->rWpaInfo.ucRSNMfpCap = RSN_AUTH_MFP_DISABLED;
 #endif
 
 	if (sme->crypto.wpa_versions & NL80211_WPA_VERSION_1)
@@ -1337,6 +1326,22 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 			prGlueInfo->u2HS20AssocInfoIELen = (UINT_16)IE_SIZE(prDesiredIE);
 		}
 #endif
+		if (wextSrchDesiredWPAIE(pucIEStart, sme->ie_len, 0x30,
+					 (uint8_t **) &prDesiredIE)) {
+			RSN_INFO_T rRsnInfo;
+
+			if (rsnParseRsnIE(prGlueInfo->prAdapter,
+			    (P_RSN_INFO_ELEM_T)prDesiredIE, &rRsnInfo)) {
+#if CFG_SUPPORT_802_11W
+				if (rRsnInfo.u2RsnCap & ELEM_WPA_CAP_MFPC) {
+					prGlueInfo->rWpaInfo.ucRSNMfpCap = RSN_AUTH_MFP_OPTIONAL;
+					if (rRsnInfo.u2RsnCap & ELEM_WPA_CAP_MFPR)
+						prGlueInfo->rWpaInfo.ucRSNMfpCap = RSN_AUTH_MFP_REQUIRED;
+				} else
+					prGlueInfo->rWpaInfo.ucRSNMfpCap = RSN_AUTH_MFP_DISABLED;
+#endif
+			}
+		}
 #if CFG_SUPPORT_OKC
 		wextSrchOkcAndPMKID(pucIEStart, sme->ie_len, (PUINT_8 *)&prDesiredIE, &prConnSettings->fgOkcEnabled);
 		if (prConnSettings->fgOkcEnabled) {
@@ -1363,6 +1368,25 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 #endif
 
 	}
+
+	/* Fill WPA info - mfp setting */
+	/* Must put after paring RSNE from upper layer
+	* for prWpaInfo->ucRSNMfpCap assignment
+	*/
+#if CFG_SUPPORT_802_11W
+	switch (sme->mfp) {
+	case NL80211_MFP_NO:
+		prGlueInfo->rWpaInfo.u4Mfp = IW_AUTH_MFP_DISABLED;
+		break;
+	case NL80211_MFP_REQUIRED:
+		prGlueInfo->rWpaInfo.u4Mfp = IW_AUTH_MFP_REQUIRED;
+		break;
+	default:
+		prGlueInfo->rWpaInfo.u4Mfp = IW_AUTH_MFP_DISABLED;
+		break;
+	}
+	DBGLOG(REQ, INFO, "MFP=%d\n", prGlueInfo->rWpaInfo.u4Mfp);
+#endif
 
 	rStatus = kalIoctl(prGlueInfo,
 			   wlanoidSetAuthMode, &eAuthMode, sizeof(eAuthMode), FALSE, FALSE, FALSE, FALSE, &u4BufLen);
