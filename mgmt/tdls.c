@@ -562,7 +562,7 @@ static void TdlsCmdTestDataSend(P_GLUE_INFO_T prGlueInfo, UINT_8 *prInBuf, UINT_
 	P_ADAPTER_T prAdapter;
 	struct sk_buff *prMsduInfo;
 	UINT_8 *prPkt;
-	UINT_8 MAC[6];
+	UINT_8 MAC[6] = {0};
 	UINT_8 ucTxStatus;
 
 	/* init */
@@ -646,7 +646,7 @@ static void TdlsCmdTestDiscoveryReqRecv(GLUE_INFO_T *prGlueInfo, UINT_8 *prInBuf
 	struct sk_buff *prMsduInfo;
 	UINT_8 *pPkt;
 	UINT_32 u4PktLen, u4IeLen;
-	UINT_8 ucDialogToken, aucPeerMac[6], aucBSSID[6], aucZeroMac[6];
+	UINT_8 ucDialogToken, aucPeerMac[6] = {0}, aucBSSID[6], aucZeroMac[6];
 
 	/* parse arguments */
 	ucDialogToken = CmdStringDecParse(prInBuf, &prInBuf, &u4InBufLen);
@@ -1032,7 +1032,7 @@ static void TdlsCmdTestSetupConfirmRecv(GLUE_INFO_T *prGlueInfo, UINT_8 *prInBuf
 	struct sk_buff *prMsduInfo;
 	UINT_8 *pPkt;
 	UINT_32 u4PktLen, u4IeLen;
-	UINT_8 ucDialogToken, ucStatusCode, aucPeerMac[6];
+	UINT_8 ucDialogToken, ucStatusCode, aucPeerMac[6] = {0};
 
 	/* parse arguments */
 	ucDialogToken = CmdStringDecParse(prInBuf, &prInBuf, &u4InBufLen);
@@ -1140,7 +1140,7 @@ static void TdlsCmdTestSetupReqRecv(GLUE_INFO_T *prGlueInfo, UINT_8 *prInBuf, UI
 	struct sk_buff *prMsduInfo;
 	UINT_8 *pPkt;
 	UINT_32 u4PktLen, u4IeLen;
-	UINT_8 ucDialogToken, aucPeerMac[6], aucBSSID[6], aucZeroMac[6];
+	UINT_8 ucDialogToken, aucPeerMac[6] = {0}, aucBSSID[6], aucZeroMac[6];
 	UINT_16 u2CapInfo;
 
 	/* parse arguments */
@@ -1271,7 +1271,7 @@ static void TdlsCmdTestSetupRspRecv(GLUE_INFO_T *prGlueInfo, UINT_8 *prInBuf, UI
 	struct sk_buff *prMsduInfo;
 	UINT_8 *pPkt;
 	UINT_32 u4PktLen, u4IeLen;
-	UINT_8 ucDialogToken, ucStatusCode, aucPeerMac[6];
+	UINT_8 ucDialogToken, ucStatusCode, aucPeerMac[6] = {0};
 	UINT_16 u2CapInfo;
 
 	/* parse arguments */
@@ -1440,7 +1440,7 @@ static void TdlsCmdTestTearDownRecv(GLUE_INFO_T *prGlueInfo, UINT_8 *prInBuf, UI
 	UINT_8 *pPkt;
 	UINT_32 u4PktLen, u4IeLen;
 	BOOLEAN fgIsInitiator;
-	UINT_8 ucReasonCode, aucPeerMac[6];
+	UINT_8 ucReasonCode, aucPeerMac[6] = {0};
 	BOOLEAN fgIsFromWhich;
 	WLAN_STATUS rStatus;
 	TDLS_CMD_CORE_T rCmd;
