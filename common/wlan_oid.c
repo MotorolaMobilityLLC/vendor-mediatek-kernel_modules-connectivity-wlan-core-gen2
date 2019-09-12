@@ -4839,6 +4839,7 @@ wlanoidSetSwCtrlWrite(IN P_ADAPTER_T prAdapter,
 			if ((BOOLEAN)u4Data) {
 				PARAM_CUSTOM_UAPSD_PARAM_STRUCT_T rUapsdParams;
 
+				kalMemZero(&rUapsdParams, sizeof(PARAM_CUSTOM_UAPSD_PARAM_STRUCT_T));
 				prAdapter->rWifiVar.fgSupportUAPSD = TRUE;
 				rUapsdParams.fgEnAPSD = 1;
 				rUapsdParams.fgEnAPSD_AcBe = 1;
@@ -9247,13 +9248,13 @@ wlanoidSetP2pMode(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4S
 
 			DBGLOG(OID, INFO, "wlanoidSetP2pMode Default enable ApUapsd\n");
 
+			kalMemZero(&rUapsdParams, sizeof(PARAM_CUSTOM_UAPSD_PARAM_STRUCT_T));
 			rUapsdParams.fgEnAPSD = 1;
 			rUapsdParams.fgEnAPSD_AcBe = 1;
 			rUapsdParams.fgEnAPSD_AcBk = 1;
 			rUapsdParams.fgEnAPSD_AcVi = 1;
 			rUapsdParams.fgEnAPSD_AcVo = 1;
 			rUapsdParams.ucMaxSpLen = 0; /* default:0, Do not limit delivery pkt num */
-			memset(rUapsdParams.aucResv, 0, sizeof(rUapsdParams.aucResv));
 
 			nicSetUApsdParam(prAdapter, rUapsdParams, NETWORK_TYPE_P2P_INDEX);
 		}
