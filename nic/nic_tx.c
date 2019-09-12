@@ -1611,14 +1611,14 @@ VOID nicTxReturnMsduInfo(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfoLi
 BOOLEAN nicTxFillMsduInfo(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN P_NATIVE_PACKET prPacket)
 {
 	P_GLUE_INFO_T prGlueInfo;
-	UINT_8 ucPriorityParam;
+	UINT_8 ucPriorityParam = 0;
 	UINT_8 ucMacHeaderLen;
-	UINT_8 aucEthDestAddr[PARAM_MAC_ADDR_LEN];
+	UINT_8 aucEthDestAddr[PARAM_MAC_ADDR_LEN] = {0};
 	BOOLEAN fgIs1x = FALSE;
 	BOOLEAN fgIsPAL = FALSE;
-	UINT_32 u4PacketLen;
+	UINT_32 u4PacketLen = 0;
 	ULONG u4SysTime;
-	UINT_8 ucNetworkType;
+	UINT_8 ucNetworkType = 0;
 	struct sk_buff *prSkb = (struct sk_buff *)prPacket;
 
 	ASSERT(prAdapter);
