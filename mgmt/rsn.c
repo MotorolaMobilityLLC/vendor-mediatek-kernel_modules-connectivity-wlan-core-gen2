@@ -2040,6 +2040,11 @@ void rsnStartSaQueryTimer(IN P_ADAPTER_T prAdapter)
 
 	DBGLOG(RSN, INFO, "MFP: Start Sa Query\n");
 
+	if (prBssInfo->prStaRecOfAP == NULL) {
+		DBGLOG(RSN, INFO, "MFP: unassociated AP!\n");
+		return;
+	}
+
 	if (prBssSpecInfo->u4SaQueryCount > 0 && rsnCheckSaQueryTimeout(prAdapter)) {
 		DBGLOG(RSN, INFO, "MFP: u4SaQueryCount count =%d\n", prBssSpecInfo->u4SaQueryCount);
 		return;
