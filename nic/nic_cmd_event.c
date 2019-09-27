@@ -1252,6 +1252,11 @@ VOID nicCmdEventQueryLteSafeChn(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdI
 	prP2pFsmInfo = prAdapter->rWifiVar.prP2pFsmInfo;
 	prEvent = (P_EVENT_LTE_SAFE_CHN_T) pucEventBuf;	/* FW responsed data */
 
+	if (!prP2pFsmInfo) {
+		DBGLOG(NIC, WARN, "NULL prP2pFsmInfo, p2p is removed?\n");
+		return;
+	}
+
 	/* Statistics from FW is valid */
 	if (prEvent->u4Flags & BIT(0)) {
 		for (ucIdx = 0; ucIdx < 5; ucIdx++) {
