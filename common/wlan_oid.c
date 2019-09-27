@@ -9094,6 +9094,9 @@ wlanoidSetTxPower(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4S
 {
 	P_SET_TXPWR_CTRL_T pTxPwr = (P_SET_TXPWR_CTRL_T)pvSetBuffer;
 	/* UINT_32 i; */
+	P_SET_TXPWR_CTRL_T pTxPwr = (P_SET_TXPWR_CTRL_T) pvSetBuffer;
+	P_SET_TXPWR_CTRL_T prCmd;
+	UINT_32 i;
 	WLAN_STATUS rStatus;
 
         CMD_TX_PWR_T rTxPwrTable[] = {
@@ -9118,6 +9121,23 @@ wlanoidSetTxPower(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4S
 
 	//DEBUGFUNC("wlanoidSetTxPower");
 	//DBGLOG(OID, LOUD, "\r\n");
+
+	prCmd = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, sizeof(SET_TXPWR_CTRL_T));
+	kalMemZero(prCmd, sizeof(SET_TXPWR_CTRL_T));
+	prCmd->c2GLegacyStaPwrOffset = pTxPwr->c2GLegacyStaPwrOffset;
+	prCmd->c2GHotspotPwrOffset = pTxPwr->c2GHotspotPwrOffset;
+	prCmd->c2GP2pPwrOffset = pTxPwr->c2GP2pPwrOffset;
+	prCmd->c2GBowPwrOffset = pTxPwr->c2GBowPwrOffset;
+	prCmd->c5GLegacyStaPwrOffset = pTxPwr->c5GLegacyStaPwrOffset;
+	prCmd->c5GHotspotPwrOffset = pTxPwr->c5GHotspotPwrOffset;
+	prCmd->c5GP2pPwrOffset = pTxPwr->c5GP2pPwrOffset;
+	prCmd->c5GBowPwrOffset = pTxPwr->c5GBowPwrOffset;
+	prCmd->ucConcurrencePolicy = pTxPwr->ucConcurrencePolicy;
+	for (i = 0; i < 14; i++)
+		prCmd->acTxPwrLimit2G[i] = pTxPwr->acTxPwrLimit2G[i];
+
+	for (i = 0; i < 4; i++)
+		prCmd->acTxPwrLimit5G[i] = pTxPwr->acTxPwrLimit5G[i];
 
 	ASSERT(prAdapter);
 	ASSERT(pvSetBuffer);
@@ -9154,10 +9174,8 @@ wlanoidSetTxPower(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4S
 				      TRUE,	/* fgSetQuery */
 				      FALSE,	/* fgNeedResp */
 				      TRUE,	/* fgIsOid */
-				      NULL,	/* pfCmdDoneHandler */
-				      NULL,	/* pfCmdTimeoutHandler */
-				      u4SetBufferLen,	/* u4SetQueryInfoLen */
-				      (PUINT_8) pvSetBuffer,	/* pucInfoBuffer */
+				      nicCmdEventSetCommon, nicOidCmdTimeoutCommon, sizeof(SET_TXPWR_CTRL_T),
+				      (PUINT_8) prCmd,	/* pucInfoBuffer */
 				      NULL,	/* pvSetQueryBuffer */
 				      0	/* u4SetQueryBufferLen */
 	    );
