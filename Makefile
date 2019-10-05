@@ -81,11 +81,7 @@ else
 endif
 
 ifeq ($(CONFIG_MTK_TC1_FEATURE), y)
-ifeq ($(CONFIG_MTK_GPT_SCHEME_SUPPORT), y)
-    ccflags-y += -I$(srctree)/drivers/misc/mediatek/tc1_interface/gpt
-else
-    ccflags-y += -I$(srctree)/drivers/misc/mediatek/tc1_interface/pmt
-endif
+    ccflags-y += -I$(srctree)/drivers/misc/mediatek/tc1_interface
     ccflags-y += -DCFG_TC1_FEATURE=1
     ccflags-y += -DCFG_SUPPORT_CFG_FILE=1
 else
