@@ -9092,8 +9092,6 @@ wlanoidSetRxPacketFilterPriv(
 WLAN_STATUS
 wlanoidSetTxPower(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen, OUT PUINT_32 pu4SetInfoLen)
 {
-	P_SET_TXPWR_CTRL_T pTxPwr = (P_SET_TXPWR_CTRL_T)pvSetBuffer;
-	/* UINT_32 i; */
 	P_SET_TXPWR_CTRL_T pTxPwr = (P_SET_TXPWR_CTRL_T) pvSetBuffer;
 	P_SET_TXPWR_CTRL_T prCmd;
 	UINT_32 i;
