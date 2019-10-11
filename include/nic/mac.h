@@ -857,8 +857,9 @@
 #define ELEM_EXT_CAP_QOSMAPSET_BIT			32
 #define ELEM_EXT_CAP_WNM_NOTIFICATION_BIT           46
 
+/*MTK CR: ALPS04813985 fix wifi kernel error in wifi test*/
 #if CFG_SUPPORT_HOTSPOT_2_0
-#define ELEM_MAX_LEN_EXT_CAP                        (6)
+#define ELEM_MAX_LEN_EXT_CAP                        (8)
 #else
 #define ELEM_MAX_LEN_EXT_CAP                        (3 - ELEM_HDR_LEN)
 #endif
