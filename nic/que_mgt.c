@@ -3769,6 +3769,8 @@ VOID mqmProcessAssocRsp(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, IN PUIN
 			break;
 		case ELEM_ID_QOS_MAP_SET:
 			DBGLOG(QM, WARN, "QM: received assoc resp qosmapset ie\n");
+			if (prStaRec->qosMapSet)
+				QosMapSetRelease(prStaRec);
 			prStaRec->qosMapSet = qosParseQosMapSet(prAdapter, pucIE);
 			hasnoQosMapSetIE = FALSE;
 		default:
