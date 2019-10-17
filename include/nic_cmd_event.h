@@ -833,7 +833,10 @@ typedef struct _EVENT_TX_DONE_T {
 typedef struct _CMD_BSS_ACTIVATE_CTRL {
 	UINT_8 ucNetTypeIndex;
 	UINT_8 ucActive;
-	UINT_8 aucReserved[2];
+	UINT_8 ucVersion;
+	UINT_8 ucReserved;
+	UINT_8 aucBssMacAddr[6];
+	UINT_32 au4Reserved[8];
 } CMD_BSS_ACTIVATE_CTRL, *P_CMD_BSS_ACTIVATE_CTRL;
 
 typedef struct _CMD_SET_BSS_RLM_PARAM_T {

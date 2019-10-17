@@ -1334,6 +1334,8 @@ WLAN_STATUS nicActivateNetwork(IN P_ADAPTER_T prAdapter, IN ENUM_NETWORK_TYPE_IN
 		prBssInfo->fgAssoc40mBwAllowed = FALSE;
 	}
 
+	DBGLOG(NIC, INFO, "CMD 0x15 size: %d\n", sizeof(rCmdActivateCtrl));
+
 	return wlanSendSetQueryCmd(prAdapter,
 				   CMD_ID_BSS_ACTIVATE_CTRL,
 				   TRUE,
