@@ -117,7 +117,7 @@ BOOLEAN nicpmSetDriverOwn(IN P_ADAPTER_T prAdapter)
 #define LP_OWN_BACK_CLR_OWN_ITERATION   200	/* exponential of 2 */
 
 	BOOLEAN fgStatus = TRUE;
-	UINT_32 i, u4CurrTick, u4WriteTick, u4WriteTickTemp, u4TickDiff;
+	UINT_32 i, u4CurrTick, u4WriteTick, u4WriteTickTemp, u4TickDiff = 0;
 	UINT_32 u4RegValue = 0;
 	GL_HIF_INFO_T *HifInfo;
 	BOOLEAN fgWmtCoreDump = FALSE;
