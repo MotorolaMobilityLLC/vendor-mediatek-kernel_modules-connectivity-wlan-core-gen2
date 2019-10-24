@@ -2003,7 +2003,7 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int data_len)
 {
 	P_GLUE_INFO_T prGlueInfo;
-	struct nlattr *tb[WIFI_VENDOR_ATTR_ACS_MAX + 1];
+	struct nlattr *tb[WIFI_VENDOR_ATTR_ACS_MAX + 1] = { 0 };
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	bool ht_enabled, ht40_enabled, vht_enabled;
 	uint8_t ch_width = 0;
