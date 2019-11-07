@@ -15,10 +15,7 @@
 #include "typedef.h"
 #include "gl_typedef.h"
 #include "config.h"
-
-#if defined(CONFIG_ARCH_MT6735M)
 #include <mt_vcore_dvfs.h>
-#endif
 #include "connectivity_build_in_adapter.h"
 
 #define CLUSTER_NUM	1	/* denali series have only 1 cluster */
@@ -63,17 +60,13 @@ INT32 kalBoostCpu(P_GLUE_INFO_T prGlueInfo, UINT_32 core_num)
 	update_userlimit_cpu_freq(PPM_KIR_WIFI, CLUSTER_NUM, &freq_to_set);
 	update_userlimit_cpu_core(PPM_KIR_WIFI, CLUSTER_NUM, &core_to_set);
 	if ((core_num >= 2) && (u1VcoreEnb == 0 || prHifInfo->fgDmaUsleepEnable)) {
-#if defined(CONFIG_ARCH_MT6735M)
 		pr_info("enable vcore raise\n");
 		vcorefs_request_dvfs_opp(KIR_WIFI, OPPI_PERF_ULTRA);
-#endif
 		prHifInfo->fgDmaUsleepEnable = FALSE;
 		u1VcoreEnb = 1;
 	} else if ((core_num < 2) && (u1VcoreEnb == 1)) {
-#if defined(CONFIG_ARCH_MT6735M)
 		pr_info("disable vcore raise\n");
 		vcorefs_request_dvfs_opp(KIR_WIFI, OPPI_UNREQ);
-#endif
 		prHifInfo->fgDmaUsleepEnable = TRUE;
 		u1VcoreEnb = 0;
 	}
