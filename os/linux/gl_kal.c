@@ -1733,12 +1733,10 @@ kalQoSFrameClassifierAndPacketInfo(IN P_GLUE_INFO_T prGlueInfo,
 
 			ucIpTos = pucIpHdr[1];
 			/* Get the DSCP value from the header of IP packet. */
-			ucUserPriority = getUpFromDscp(prGlueInfo, *pucNetworkType, ucIpTos & 0x3F);
-
-
+			ucUserPriority = getUpFromDscp(prGlueInfo, *pucNetworkType, (ucIpTos >> 2) & 0x3F);
 
 #if (1 || defined(PPR2_TEST))
-		DBGLOG(TX, TRACE, "setUP ucIpTos: %d, ucUP: %d\n", ucIpTos, ucUserPriority);
+		/* DBGLOG(TX, TRACE, "setUP ucIpTos: %d, ucUP: %d\n", ucIpTos, ucUserPriority);*/
 		if (pucIpHdr[9] == IP_PRO_ICMP && pucIpPayload[0] == 0x08) {
 			DBGLOG(TX, INFO, "PING ipid: %d ucIpTos: %d, ucUP: %d\n",
 				(pucIpHdr[5] << 8 | pucIpHdr[4]),
@@ -1752,6 +1750,19 @@ kalQoSFrameClassifierAndPacketInfo(IN P_GLUE_INFO_T prGlueInfo,
 		}
 
 		/* TODO(Kevin): Add TSPEC classifier here */
+	}  else if (u2EtherTypeLen == ETH_P_IPV6) {
+		PUINT_8 pucIpHdr = &aucLookAheadBuf[ETH_HLEN];
+		UINT_16 u2Tmp;
+		UINT_8 ucIpTos;
+
+		WLAN_GET_FIELD_BE16(pucIpHdr, &u2Tmp);
+		ucIpTos = u2Tmp >> 4;
+
+		/* Get the DSCP value from the header of IP packet. */
+		ucUserPriority = getUpFromDscp(prGlueInfo, *pucNetworkType, (ucIpTos >> 2) & 0x3F);
+
+		if (ucUserPriority == 0xFF)
+			ucUserPriority = ((ucIpTos & IPTOS_PREC_MASK) >> IPTOS_PREC_OFFSET);
 	}  else if (u2EtherTypeLen == ETH_P_1X || u2EtherTypeLen == ETH_P_PRE_1X) {	/* For Port Control */
 		PUINT_8 pucEapol = &aucLookAheadBuf[ETH_HLEN];
 		UINT_8 ucEapolType = pucEapol[1];
