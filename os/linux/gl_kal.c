@@ -3696,6 +3696,25 @@ UINT_32 kalGetMfpSetting(IN P_GLUE_INFO_T prGlueInfo)
 
 	return prGlueInfo->rWpaInfo.u4Mfp;
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief to check if the RSN IE CAP setting from supplicant
+ *
+ * \param[in]
+ *           prGlueInfo
+ *
+ * \return
+ *           TRUE
+ *           FALSE
+ */
+/*----------------------------------------------------------------------------*/
+UINT_8 kalGetRsnIeMfpCap(IN P_GLUE_INFO_T prGlueInfo)
+{
+	ASSERT(prGlueInfo);
+
+	return prGlueInfo->rWpaInfo.ucRSNMfpCap;
+}
 #endif
 
 struct file *kalFileOpen(const char *path, int flags, int rights)

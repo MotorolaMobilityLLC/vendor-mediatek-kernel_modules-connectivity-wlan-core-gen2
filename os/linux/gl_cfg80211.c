@@ -1035,6 +1035,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 {
 	P_GLUE_INFO_T prGlueInfo = NULL;
 	WLAN_STATUS rStatus;
+	UINT_16 u2PmkIdCnt = 0;
 	UINT_32 u4BufLen;
 	ENUM_PARAM_ENCRYPTION_STATUS_T eEncStatus;
 	ENUM_PARAM_AUTH_MODE_T eAuthMode;
@@ -1344,26 +1345,24 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 		}
 #if CFG_SUPPORT_OKC
 		wextSrchOkcAndPMKID(pucIEStart, sme->ie_len, (PUINT_8 *)&prDesiredIE, &prConnSettings->fgOkcEnabled);
-		if (prConnSettings->fgOkcEnabled) {
-			UINT_16 u2PmkIdCnt = 0;
 
-			if (prDesiredIE)
-				u2PmkIdCnt = *(PUINT_16)prDesiredIE;
-			DBGLOG(REQ, TRACE, "u2PmkIdCnt %d\n", u2PmkIdCnt);
-			if (u2PmkIdCnt != 0 && sme->bssid && !EQUAL_MAC_ADDR("\x0\x0\x0\x0\x0\x0", sme->bssid) &&
-				IS_UCAST_MAC_ADDR(sme->bssid)) {
-				PARAM_PMKID_T rPmkid;
+		if (prDesiredIE)
+			u2PmkIdCnt = *(PUINT_16)prDesiredIE;
+		DBGLOG(REQ, INFO, "u2PmkIdCnt %d\n", u2PmkIdCnt);
 
-				rPmkid.u4Length = (UINT_32)(sizeof(rPmkid) | (1 << 31));
-				rPmkid.u4BSSIDInfoCount = 1;
-				kalMemCopy(rPmkid.arBSSIDInfo[0].arBSSID, sme->bssid, MAC_ADDR_LEN);
-				kalMemCopy(rPmkid.arBSSIDInfo[0].arPMKID, prDesiredIE+2, IW_PMKID_LEN);
-				rStatus = kalIoctl(prGlueInfo,
-					   wlanoidSetPmkid,
-					   (PVOID)&rPmkid, rPmkid.u4Length, FALSE, FALSE, FALSE, FALSE, &u4BufLen);
-				if (rStatus != WLAN_STATUS_SUCCESS)
-					DBGLOG(REQ, WARN, "failed to add OKC PMKID\n");
-			}
+		if (u2PmkIdCnt != 0 && sme->bssid && !EQUAL_MAC_ADDR("\x0\x0\x0\x0\x0\x0", sme->bssid) &&
+		    IS_UCAST_MAC_ADDR(sme->bssid)) {
+			PARAM_PMKID_T rPmkid;
+
+			rPmkid.u4Length = (UINT_32)(sizeof(rPmkid) | (1 << 31));
+			rPmkid.u4BSSIDInfoCount = 1;
+			kalMemCopy(rPmkid.arBSSIDInfo[0].arBSSID, sme->bssid, MAC_ADDR_LEN);
+			kalMemCopy(rPmkid.arBSSIDInfo[0].arPMKID, prDesiredIE+2, IW_PMKID_LEN);
+			rStatus = kalIoctl(prGlueInfo,
+				   wlanoidSetPmkid,
+				   (PVOID)&rPmkid, rPmkid.u4Length, FALSE, FALSE, FALSE, FALSE, &u4BufLen);
+			if (rStatus != WLAN_STATUS_SUCCESS)
+				DBGLOG(REQ, WARN, "failed to add OKC PMKID\n");
 		}
 #endif
 
@@ -1377,6 +1376,17 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 	switch (sme->mfp) {
 	case NL80211_MFP_NO:
 		prGlueInfo->rWpaInfo.u4Mfp = IW_AUTH_MFP_DISABLED;
+		/* Change Mfp parameter from DISABLED to OPTIONAL
+		* if upper layer set MFPC = 1 in RSNE
+		* since upper layer can't bring MFP OPTIONAL information
+		* to driver by sme->mfp
+		*/
+		if (prGlueInfo->rWpaInfo.ucRSNMfpCap == RSN_AUTH_MFP_OPTIONAL)
+			prGlueInfo->rWpaInfo.u4Mfp = IW_AUTH_MFP_OPTIONAL;
+		else if (prGlueInfo->rWpaInfo.ucRSNMfpCap ==
+					RSN_AUTH_MFP_REQUIRED)
+			DBGLOG(REQ, WARN,
+				"mfp parameter(DISABLED) conflict with mfp cap(REQUIRED)\n");
 		break;
 	case NL80211_MFP_REQUIRED:
 		prGlueInfo->rWpaInfo.u4Mfp = IW_AUTH_MFP_REQUIRED;

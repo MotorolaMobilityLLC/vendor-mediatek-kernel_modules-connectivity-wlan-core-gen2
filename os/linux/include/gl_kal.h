@@ -833,6 +833,7 @@ VOID kalDmaBufGet(IN VOID *dev, OUT VOID **VirtAddr, OUT VOID **PhyAddr);
 /* 802.11W                                                                    */
 /*----------------------------------------------------------------------------*/
 UINT_32 kalGetMfpSetting(IN P_GLUE_INFO_T prGlueInfo);
+UINT_8 kalGetRsnIeMfpCap(IN P_GLUE_INFO_T prGlueInfo);
 #endif
 
 UINT_32 kalWriteToFile(const PUINT_8 pucPath, BOOLEAN fgDoAppend, PUINT_8 pucData, UINT_32 u4Size);
