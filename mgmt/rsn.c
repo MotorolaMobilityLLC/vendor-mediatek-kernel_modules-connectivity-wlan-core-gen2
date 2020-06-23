@@ -1385,7 +1385,7 @@ VOID rsnGenerateRSNIE(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo)
 				cp += sizeof(PARAM_PMKID_VALUE);
 			}
 #if CFG_SUPPORT_802_11W
-			if (kalGetRsnIeMfpCap(prAdapter->prGlueInfo) != RSN_AUTH_MFP_DISABLED) {
+			if (prAdapter->rWifiVar.rAisSpecificBssInfo.fgMgmtProtection) {
 				if (!fgPmkidExist) {
 					/* Empty PMKID Count */
 					WLAN_SET_FIELD_16(cp, 0);	/* PMKID count */
