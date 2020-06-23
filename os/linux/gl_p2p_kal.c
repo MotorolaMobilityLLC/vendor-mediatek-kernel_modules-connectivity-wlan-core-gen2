@@ -994,7 +994,8 @@ VOID kalP2PIndicateScanDone(IN P_GLUE_INFO_T prGlueInfo, IN BOOLEAN fgIsAbort)
 			/* report all queued beacon/probe response frames  to upper layer */
 			scanReportBss2Cfg80211(prGlueInfo->prAdapter, BSS_TYPE_P2P_DEVICE, NULL);
 
-			DBGLOG(INIT, TRACE, "DBG:p2p_cfg_scan_done\n");
+			DBGLOG(INIT, TRACE, "p2p_cfg_scan_done, req->wiphy=0x%x, dev->wiphy=0x%x\n",
+				prScanRequest->wiphy, prGlueP2pInfo->prWdev->wiphy);
 			kalCfg80211ScanDone(prScanRequest, fgIsAbort);
 		}
 
