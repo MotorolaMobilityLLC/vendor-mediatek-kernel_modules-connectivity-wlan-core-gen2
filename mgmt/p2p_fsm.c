@@ -1933,6 +1933,7 @@ VOID p2pFsmRunEventRxDeauthentication(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_
 	P_P2P_FSM_INFO_T prP2pFsmInfo = (P_P2P_FSM_INFO_T) NULL;
 	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
 	UINT_16 u2ReasonCode = 0;
+	BOOLEAN fgSendDeauth = FALSE;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prSwRfb != NULL));
@@ -1995,6 +1996,25 @@ VOID p2pFsmRunEventRxDeauthentication(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_
 				P_LINK_ENTRY_T prLinkEntry = (P_LINK_ENTRY_T) NULL;
 				P_STA_RECORD_T prCurrStaRec = (P_STA_RECORD_T) NULL;
 
+#if CFG_SUPPORT_802_11W
+				/* AP PMF */
+				if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
+					P_HIF_RX_HEADER_T prHifRxHdr = prSwRfb->prHifRxHdr;
+
+					if (prHifRxHdr->ucReserved & CONTROL_FLAG_UC_MGMT_NO_ENC) {
+						/* if cipher mismatch, or incorrect encrypt, just drop */
+						DBGLOG(P2P, ERROR, "Rx deauth CM/CLM=1\n");
+						return;
+					}
+
+					/* 4.3.3.1 send unprotected deauth reason 6/7 */
+					DBGLOG(P2P, INFO, "deauth reason=6\n");
+					fgSendDeauth = TRUE;
+					u2ReasonCode = REASON_CODE_CLASS_2_ERR;
+					prStaRec->rPmfCfg.fgRxDeauthResp = TRUE;
+				}
+#endif
+
 				prStaRecOfClientList = &prP2pBssInfo->rStaRecOfClientList;
 
 				LINK_FOR_EACH(prLinkEntry, prStaRecOfClientList) {
@@ -2013,7 +2033,7 @@ VOID p2pFsmRunEventRxDeauthentication(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_
 
 						/* Indicate disconnect to Host. */
 						DBGLOG(P2P, INFO, "GO RX Deauth Reason: %d\n", u2ReasonCode);
-						p2pFuncDisconnect(prAdapter, prStaRec, FALSE, u2ReasonCode);
+						p2pFuncDisconnect(prAdapter, prStaRec, fgSendDeauth, u2ReasonCode);
 
 						break;
 					}
@@ -2048,6 +2068,7 @@ VOID p2pFsmRunEventRxDisassociation(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T 
 	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
 	P_P2P_FSM_INFO_T prP2pFsmInfo = (P_P2P_FSM_INFO_T) NULL;
 	UINT_16 u2ReasonCode = 0;
+	BOOLEAN fgSendDeauth = FALSE;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prSwRfb != NULL));
@@ -2111,6 +2132,25 @@ VOID p2pFsmRunEventRxDisassociation(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T 
 				P_LINK_ENTRY_T prLinkEntry = (P_LINK_ENTRY_T) NULL;
 				P_STA_RECORD_T prCurrStaRec = (P_STA_RECORD_T) NULL;
 
+#if CFG_SUPPORT_802_11W
+				/* AP PMF */
+				if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
+					P_HIF_RX_HEADER_T prHifRxHdr = prSwRfb->prHifRxHdr;
+
+					if (prHifRxHdr->ucReserved & CONTROL_FLAG_UC_MGMT_NO_ENC) {
+						/* if cipher mismatch, or incorrect encrypt, just drop */
+						DBGLOG(P2P, ERROR, "Rx disassoc CM/CLM=1\n");
+						return;
+					}
+
+					/* 4.3.3.1 send unprotected deauth reason 6/7 */
+					DBGLOG(P2P, INFO, "deauth reason=6\n");
+					fgSendDeauth = TRUE;
+					u2ReasonCode = REASON_CODE_CLASS_2_ERR;
+					prStaRec->rPmfCfg.fgRxDeauthResp = TRUE;
+				}
+#endif
+
 				prStaRecOfClientList = &prP2pBssInfo->rStaRecOfClientList;
 
 				LINK_FOR_EACH(prLinkEntry, prStaRecOfClientList) {
@@ -2129,7 +2169,7 @@ VOID p2pFsmRunEventRxDisassociation(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T 
 
 						/* Indicate disconnect to Host. */
 						DBGLOG(P2P, INFO, "GO RX Disassoc Reason %d\n", u2ReasonCode);
-						p2pFuncDisconnect(prAdapter, prStaRec, FALSE, u2ReasonCode);
+						p2pFuncDisconnect(prAdapter, prStaRec, fgSendDeauth, u2ReasonCode);
 
 						break;
 					}

@@ -213,7 +213,10 @@ wlanoidSetAddP2PKey(IN P_ADAPTER_T prAdapter,
 	/* Exception check, pairwise key must with transmit bit enabled */
 	else if ((prNewKey->u4KeyIndex & BITS(30, 31)) == IS_UNICAST_KEY) {
 		return WLAN_STATUS_INVALID_DATA;
-	} else if (!(prNewKey->u4KeyLength == CCMP_KEY_LEN) && !(prNewKey->u4KeyLength == TKIP_KEY_LEN)) {
+	} else if (!(prNewKey->u4KeyLength == WEP_40_LEN ||
+	    prNewKey->u4KeyLength == WEP_104_LEN ||
+	    prNewKey->u4KeyLength == CCMP_KEY_LEN ||
+	    prNewKey->u4KeyLength == TKIP_KEY_LEN)) {
 		return WLAN_STATUS_INVALID_DATA;
 	}
 	/* Exception check, pairwise key must with transmit bit enabled */
@@ -240,10 +243,8 @@ wlanoidSetAddP2PKey(IN P_ADAPTER_T prAdapter,
 	}
 	COPY_MAC_ADDR(rCmdKey.aucPeerAddr, prNewKey->arBSSID);
 	rCmdKey.ucNetType = NETWORK_TYPE_P2P_INDEX;
-	if (prNewKey->u4KeyLength == CCMP_KEY_LEN)
-		rCmdKey.ucAlgorithmId = CIPHER_SUITE_CCMP;	/* AES */
-	else if (prNewKey->u4KeyLength == TKIP_KEY_LEN)
-		rCmdKey.ucAlgorithmId = CIPHER_SUITE_TKIP;	/* TKIP */
+	if (prNewKey->ucCipher)
+		rCmdKey.ucAlgorithmId = prNewKey->ucCipher;
 	rCmdKey.ucKeyId = (UINT_8) (prNewKey->u4KeyIndex & 0xff);
 	rCmdKey.ucKeyLen = (UINT_8) prNewKey->u4KeyLength;
 	kalMemCopy(rCmdKey.aucKeyMaterial, (PUINT_8) prNewKey->aucKeyMaterial, rCmdKey.ucKeyLen);
@@ -255,6 +256,18 @@ wlanoidSetAddP2PKey(IN P_ADAPTER_T prAdapter,
 	if (TdlsexKeyHandle(prAdapter, prNewKey, NETWORK_TYPE_P2P_INDEX) == TDLS_STATUS_SUCCESS)
 		return WLAN_STATUS_SUCCESS;
 #endif /* CFG_SUPPORT_TDLS */
+
+#if CFG_SUPPORT_802_11W
+	/* AP PMF */
+	if ((rCmdKey.ucKeyId >= 4 && rCmdKey.ucKeyId <= 5) &&
+		(rCmdKey.ucAlgorithmId == CIPHER_SUITE_BIP)) {
+		P_BSS_INFO_T prBssInfo =
+			&(prAdapter->rWifiVar.arBssInfo[(NETWORK_TYPE_P2P_INDEX)]);
+
+		DBGLOG(RSN, INFO, "AP mode set BIP\n");
+		prBssInfo->rApPmfCfg.fgBipKeyInstalled = TRUE;
+	}
+#endif
 
 	return _wlanoidSendSetQueryP2PCmd(prAdapter,
 					 CMD_ID_ADD_REMOVE_KEY,

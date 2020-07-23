@@ -181,38 +181,59 @@ VOID aaaFsmRunEventRxAuth(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
 	UINT_16 u2StatusCode;
 	BOOLEAN fgReplyAuth = FALSE;
 	ENUM_NETWORK_TYPE_INDEX_T eNetTypeIndex;
+	P_WLAN_AUTH_FRAME_T prAuthFrame;
 
 	ASSERT(prAdapter);
 
 	do {
+		prAuthFrame = (P_WLAN_AUTH_FRAME_T) prSwRfb->pvHeader;
+
+		DBGLOG(AAA, INFO,
+			"SA: " MACSTR ", bssid: " MACSTR ", %d %d sta idx: %d\n",
+			MAC2STR(prAuthFrame->aucSrcAddr),
+			MAC2STR(prAuthFrame->aucBSSID),
+			prAuthFrame->u2AuthTransSeqNo,
+			prAuthFrame->u2AuthAlgNum,
+			prSwRfb->ucStaRecIdx);
 
 		/* 4 <1> Check P2P network conditions */
 #if CFG_ENABLE_WIFI_DIRECT
-		if (prAdapter->fgIsP2PRegistered) {
-			prBssInfo = &(prAdapter->rWifiVar.arBssInfo[NETWORK_TYPE_P2P_INDEX]);
+		prBssInfo = &(prAdapter->rWifiVar.arBssInfo[NETWORK_TYPE_P2P_INDEX]);
 
-			if (prBssInfo->fgIsNetActive) {
+		if (!prAdapter->fgIsP2PRegistered)
+			goto bow_proc;
 
-				/* 4 <1.1> Validate Auth Frame by Auth Algorithm/Transation Seq */
-				if (authProcessRxAuth1Frame(prAdapter,
-						prSwRfb,
-						prBssInfo->aucBSSID,
-						AUTH_ALGORITHM_NUM_OPEN_SYSTEM,
-						AUTH_TRANSACTION_SEQ_1, &u2StatusCode) == WLAN_STATUS_SUCCESS) {
+		if (prBssInfo && prBssInfo->fgIsNetActive) {
+			/* 4 <1.1> Validate Auth Frame by Auth Algorithm/Transation Seq */
+			if (authProcessRxAuthFrame(prAdapter,
+					prSwRfb,
+					prBssInfo,
+					&u2StatusCode) == WLAN_STATUS_SUCCESS) {
 
-					if (u2StatusCode == STATUS_CODE_SUCCESSFUL) {
-						/* 4 <1.2> Validate Auth Frame for Network Specific Conditions */
-						fgReplyAuth = p2pFuncValidateAuth(prAdapter,
-										  prSwRfb, &prStaRec, &u2StatusCode);
-					} else {
-						fgReplyAuth = TRUE;
+				if (u2StatusCode == STATUS_CODE_SUCCESSFUL) {
+					DBGLOG(AAA, TRACE,
+						"process RxAuth status success\n");
+					/* 4 <1.2> Validate Auth Frame for Network Specific Conditions */
+					fgReplyAuth = p2pFuncValidateAuth(prAdapter,
+									  prSwRfb, &prStaRec, &u2StatusCode);
+#if CFG_SUPPORT_802_11W
+					/* AP PMF, if PMF connection, ignore Rx auth */
+					/* Certification 4.3.3.4 */
+					if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
+						DBGLOG(AAA, INFO, "Drop RxAuth\n");
+						return;
 					}
-					eNetTypeIndex = NETWORK_TYPE_P2P_INDEX;
-					break;
+#endif
+				} else {
+					fgReplyAuth = TRUE;
 				}
+				eNetTypeIndex = NETWORK_TYPE_P2P_INDEX;
+				break;
 			}
 		}
 #endif /* CFG_ENABLE_WIFI_DIRECT */
+
+bow_proc:
 
 		/* 4 <2> Check BOW network conditions */
 #if CFG_ENABLE_BT_OVER_WIFI
@@ -276,10 +297,19 @@ VOID aaaFsmRunEventRxAuth(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
 			/* Update Status/Reason Code */
 			prStaRec->u2StatusCode = u2StatusCode;
 
-			prStaRec->ucAuthAlgNum = AUTH_ALGORITHM_NUM_OPEN_SYSTEM;
+			prStaRec->ucAuthAlgNum = prAuthFrame->u2AuthAlgNum;
 		} else {
 			/* NOTE(Kevin): We should have STA_RECORD_T if the status code was successful */
 			ASSERT(!(u2StatusCode == STATUS_CODE_SUCCESSFUL));
+		}
+
+		if (prBssInfo->u4RsnSelectedAKMSuite ==
+			RSN_AKM_SUITE_SAE) {
+			kalP2PIndicateRxMgmtFrame(
+				prAdapter->prGlueInfo,
+				prSwRfb);
+			DBGLOG(AAA, INFO, "Forward RxAuth\n");
+			return;
 		}
 
 		/* 4 <4> Reply Auth_2 Frame */
@@ -309,6 +339,7 @@ WLAN_STATUS aaaFsmRunEventRxAssoc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRf
 	P_STA_RECORD_T prStaRec = (P_STA_RECORD_T) NULL;
 	UINT_16 u2StatusCode = STATUS_CODE_RESERVED;
 	BOOLEAN fgReplyAssocResp = FALSE;
+	BOOLEAN fgSendSAQ = FALSE;
 
 	ASSERT(prAdapter);
 
@@ -478,13 +509,42 @@ WLAN_STATUS aaaFsmRunEventRxAssoc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRf
 #endif
 #endif
 	} else {
-		prStaRec->u2AssocId = 0;	/* Invalid Association ID */
+#if CFG_SUPPORT_802_11W
+			/* AP PMF */
+			/* don't change state, just send assoc resp (NO need TX done, TIE + code30
+			 * ) and then SAQ
+			 */
+			if (u2StatusCode == STATUS_CODE_ASSOC_REJECTED_TEMPORARILY) {
+				DBGLOG(AAA, INFO, "AP send SAQ\n");
+				fgSendSAQ = TRUE;
+			} else
+#endif
+			{
+				prStaRec->u2AssocId = 0;	/* Invalid Association ID */
 
-		/* If (Re)association fail, the peer can try Association w/o Auth immediately */
-		prStaRec->eAuthAssocState = AAA_STATE_SEND_AUTH2;
+				/* If (Re)association fail,
+				 * remove sta record and use class error to handle sta
+				 */
+				prStaRec->eAuthAssocState = AA_STATE_IDLE;
+				/* Remove from client list if it was previously associated */
+				if ((prStaRec->ucStaState > STA_STATE_1)
+					&& prAdapter->fgIsP2PRegistered
+					&& (IS_STA_IN_P2P(prStaRec))) {
+					P_BSS_INFO_T prBssInfo = NULL;
 
-		/* NOTE(Kevin): Better to change state here, not at TX Done */
-		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_2);
+					prBssInfo =
+						GET_BSS_INFO_BY_INDEX(prAdapter,
+						NETWORK_TYPE_P2P_INDEX);
+					if (prBssInfo) {
+						DBGLOG(AAA, INFO, "Remove client!\n");
+						bssRemoveStaRecFromClientList(prAdapter,
+							prBssInfo, prStaRec);
+					}
+				}
+
+				/* NOTE(Kevin): Better to change state here, not at TX Done */
+				cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_2);
+			}
 	}
 
 	/* Update the record join time. */
@@ -496,6 +556,14 @@ WLAN_STATUS aaaFsmRunEventRxAssoc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRf
 	/* NOTE: Ignore the return status for AAA */
 	/* 4 <4.2> Reply  Assoc Resp */
 	assocSendReAssocRespFrame(prAdapter, prStaRec);
+
+#if CFG_SUPPORT_802_11W
+	/* AP PMF */
+	if (fgSendSAQ) {
+		/* if PMF connection, and return code 30, send SAQ */
+		rsnApStartSaQuery(prAdapter, prStaRec);
+	}
+#endif
 
 }
 
@@ -581,7 +649,8 @@ aaaFsmRunEventTxDone(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN E
 			if (assocCheckTxReAssocRespFrame(prAdapter, prMsduInfo) != WLAN_STATUS_SUCCESS)
 				break;
 
-			if (prStaRec->u2StatusCode == STATUS_CODE_SUCCESSFUL) {
+			if (prStaRec->u2StatusCode == STATUS_CODE_SUCCESSFUL
+				|| prStaRec->u2StatusCode == STATUS_CODE_ASSOC_REJECTED_TEMPORARILY) {
 				if (rTxDoneStatus == TX_RESULT_SUCCESS) {
 
 					prStaRec->eAuthAssocState = AA_STATE_IDLE;
@@ -624,6 +693,10 @@ aaaFsmRunEventTxDone(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN E
 	default:
 		break;		/* Ignore other cases */
 	}
+
+	DBGLOG(AAA, LOUD,
+		"TxDone end ucStaState:%d, eAuthAssocState:%d, u2StatusCode:%d\n",
+		prStaRec->ucStaState, prStaRec->eAuthAssocState, prStaRec->u2StatusCode);
 
 	return WLAN_STATUS_SUCCESS;
 

@@ -3202,6 +3202,23 @@ WLAN_STATUS nicRxProcessActionFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSw
 				} else {
 					DBGLOG(RSN, WARN, "Un-Protected SA Query, do nothing\n");
 				}
+			} else if (HIF_RX_HDR_GET_NETWORK_IDX(prHifRxHdr) ==
+				NETWORK_TYPE_P2P_INDEX) {
+				P_BSS_INFO_T prBssInfo =
+					&(prAdapter->rWifiVar.arBssInfo[NETWORK_TYPE_P2P_INDEX]);
+				P_STA_RECORD_T prStaRec =
+					cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+				if (prBssInfo &&
+					prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT &&
+					prStaRec) {
+					/* AP PMF */
+					DBGLOG(RSN, INFO, "[Rx] nicRx AP PMF SAQ action\n");
+					if (rsnCheckBipKeyInstalled(prAdapter,
+						prStaRec)) {
+						/* MFP test plan 4.3.3.4 */
+						rsnApSaQueryAction(prAdapter, prSwRfb);
+					}
+				}
 			}
 		}
 		break;

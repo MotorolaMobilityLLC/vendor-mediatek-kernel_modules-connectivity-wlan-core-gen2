@@ -850,6 +850,11 @@ static VOID cnmStaSendUpdateCmd(P_ADAPTER_T prAdapter, P_STA_RECORD_T prStaRec, 
 	prCmdContent->ucKeepAliveDuration = (UINT_8)prStaRec->u2MaxIdlePeriod;
 	prCmdContent->ucKeepAliveOption = prStaRec->ucIdleOption;
 
+#if CFG_SUPPORT_802_11W
+	/* AP PMF */
+	prCmdContent->ucApplyPmf = prStaRec->rPmfCfg.fgApplyPmf;
+#endif
+
 	if (prCmdContent->ucKeepAliveDuration > 0)
 		DBGLOG(CNM, INFO, "keep-alive duration is %d\n", prCmdContent->ucKeepAliveDuration);
 

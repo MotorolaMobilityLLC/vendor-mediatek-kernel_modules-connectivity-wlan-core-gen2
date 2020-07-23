@@ -1342,10 +1342,44 @@ VOID rsnGenerateRSNIE(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo)
 		WLAN_SET_FIELD_16(&RSN_IE(pucBuffer)->u2PairwiseKeyCipherSuiteCount, 1);
 		WLAN_SET_FIELD_32(cp, prAdapter->rWifiVar.arBssInfo[eNetworkId].u4RsnSelectedPairwiseCipher);
 		cp += 4;
-		WLAN_SET_FIELD_16(cp, 1);	/* AKM suite count */
-		cp += 2;
-		WLAN_SET_FIELD_32(cp, prAdapter->rWifiVar.arBssInfo[eNetworkId].u4RsnSelectedAKMSuite);	/* AKM suite */
-		cp += 4;
+
+		if ((eNetworkId == NETWORK_TYPE_P2P_INDEX) &&
+			(prAdapter->rWifiVar.arBssInfo[eNetworkId].u4RsnSelectedAKMSuite
+			== RSN_AKM_SUITE_SAE)) {
+			P_P2P_SPECIFIC_BSS_INFO_T prP2pSpecificBssInfo =
+				(P_P2P_SPECIFIC_BSS_INFO_T) NULL;
+
+			UINT_8 i = 0;
+
+			prP2pSpecificBssInfo = prAdapter->rWifiVar.prP2pSpecificBssInfo;
+
+			/* AKM suite count */
+			WLAN_SET_FIELD_16(cp,
+				prP2pSpecificBssInfo->u4KeyMgtSuiteCount);
+			cp += 2;
+
+			/* AKM suite */
+			for (i = 0;
+				i < prP2pSpecificBssInfo->u4KeyMgtSuiteCount;
+				i++) {
+				DBGLOG(RSN, TRACE, "KeyMgtSuite 0x%04x\n",
+					prP2pSpecificBssInfo->au4KeyMgtSuite[i]);
+				WLAN_SET_FIELD_32(cp,
+					prP2pSpecificBssInfo->au4KeyMgtSuite[i]);
+				cp += 4;
+			}
+
+			RSN_IE(pucBuffer)->ucLength +=
+				(prP2pSpecificBssInfo->u4KeyMgtSuiteCount - 1) * 4;
+		} else {
+			WLAN_SET_FIELD_16(cp, 1);	/* AKM suite count */
+			cp += 2;
+			WLAN_SET_FIELD_32(cp,
+				prAdapter->rWifiVar.arBssInfo[eNetworkId].u4RsnSelectedAKMSuite);
+			/* AKM suite */
+			cp += 4;
+		}
+
 		WLAN_SET_FIELD_16(cp, prAdapter->rWifiVar.arBssInfo[eNetworkId].u2RsnSelectedCapInfo);/* Capabilities */
 #if CFG_SUPPORT_802_11W
 		if (eNetworkId == NETWORK_TYPE_AIS_INDEX && prAdapter->rWifiVar.rAisSpecificBssInfo.fgMgmtProtection) {
@@ -1462,13 +1496,17 @@ rsnParseCheckForWFAInfoElem(IN P_ADAPTER_T prAdapter,
 * \retval none
 */
 /*----------------------------------------------------------------------------*/
-void rsnParserCheckForRSNCCMPPSK(P_ADAPTER_T prAdapter, P_RSN_INFO_ELEM_T prIe, PUINT_16 pu2StatusCode)
+void rsnParserCheckForRSNCCMPPSK(P_ADAPTER_T prAdapter, P_RSN_INFO_ELEM_T prIe,
+			P_STA_RECORD_T prStaRec, PUINT_16 pu2StatusCode)
 {
 
 	RSN_INFO_T rRsnIe;
+	UINT_8 i;
+	UINT_16 statusCode;
 
 	ASSERT(prAdapter);
 	ASSERT(prIe);
+	ASSERT(prStaRec);
 	ASSERT(pu2StatusCode);
 
 	*pu2StatusCode = STATUS_CODE_INVALID_INFO_ELEMENT;
@@ -1483,13 +1521,72 @@ void rsnParserCheckForRSNCCMPPSK(P_ADAPTER_T prAdapter, P_RSN_INFO_ELEM_T prIe, 
 			*pu2StatusCode = STATUS_CODE_INVALID_GROUP_CIPHER;
 			return;
 		}
-		if ((rRsnIe.u4AuthKeyMgtSuiteCount != 1) || (rRsnIe.au4AuthKeyMgtSuite[0] != RSN_AKM_SUITE_PSK)) {
+		if ((rRsnIe.u4AuthKeyMgtSuiteCount != 1)
+			|| ((rRsnIe.au4AuthKeyMgtSuite[0] != RSN_AKM_SUITE_PSK)
+#if CFG_SUPPORT_SOFTAP_WPA3
+			&& (rRsnIe.au4AuthKeyMgtSuite[0] != RSN_AKM_SUITE_SAE)
+#endif
+			)) {
+			DBGLOG(RSN, WARN, "RSN with invalid AKMP\n");
 			*pu2StatusCode = STATUS_CODE_INVALID_AKMP;
 			return;
 		}
 
 		DBGLOG(RSN, TRACE, "RSN with CCMP-PSK\n");
 		*pu2StatusCode = WLAN_STATUS_SUCCESS;
+
+#if CFG_SUPPORT_802_11W
+		/* AP PMF */
+		/* 1st check: if already PMF connection, reject assoc req:
+		 * error 30 ASSOC_REJECTED_TEMPORARILY
+		 */
+		if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
+			*pu2StatusCode = STATUS_CODE_ASSOC_REJECTED_TEMPORARILY;
+			return;
+		}
+
+		/* if RSN capability not exist, just return */
+		if (!rRsnIe.fgRsnCapPresent) {
+			*pu2StatusCode = WLAN_STATUS_SUCCESS;
+			return;
+		}
+
+		prStaRec->rPmfCfg.fgMfpc = (rRsnIe.u2RsnCap &
+					    ELEM_WPA_CAP_MFPC) ? 1 : 0;
+		prStaRec->rPmfCfg.fgMfpr = (rRsnIe.u2RsnCap &
+					    ELEM_WPA_CAP_MFPR) ? 1 : 0;
+
+		prStaRec->rPmfCfg.fgSaeRequireMfp = FALSE;
+
+		for (i = 0; i < rRsnIe.u4AuthKeyMgtSuiteCount; i++) {
+			if ((rRsnIe.au4AuthKeyMgtSuite[i] ==
+			     RSN_AKM_SUITE_802_1X_SHA256) ||
+			    (rRsnIe.au4AuthKeyMgtSuite[i] ==
+			     RSN_AKM_SUITE_PSK_SHA256)) {
+				DBGLOG(RSN, INFO, "STA SHA256 support\n");
+				prStaRec->rPmfCfg.fgSha256 = TRUE;
+				break;
+			} else if (rRsnIe.au4AuthKeyMgtSuite[i] ==
+				RSN_AKM_SUITE_SAE) {
+				DBGLOG(RSN, INFO, "STA SAE support\n");
+				prStaRec->rPmfCfg.fgSaeRequireMfp = TRUE;
+				break;
+			}
+		}
+
+		DBGLOG(RSN, INFO,
+		       "STA Assoc req mfpc:%d, mfpr:%d, sha256:%d, applyPmf:%d\n",
+		       prStaRec->rPmfCfg.fgMfpc, prStaRec->rPmfCfg.fgMfpr,
+		       prStaRec->rPmfCfg.fgSha256,
+		       prStaRec->rPmfCfg.fgApplyPmf);
+
+		/* if PMF validation fail, return success as legacy association
+		 */
+		statusCode = rsnPmfCapableValidation(prAdapter,
+			GET_BSS_INFO_BY_INDEX(prAdapter, NETWORK_TYPE_P2P_INDEX),
+			prStaRec);
+		*pu2StatusCode = statusCode;
+#endif
 	}
 
 }
@@ -1967,9 +2064,25 @@ VOID rsnGeneratePmkidIndication(IN P_ADAPTER_T prAdapter)
 /*----------------------------------------------------------------------------*/
 UINT_32 rsnCheckBipKeyInstalled(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec)
 {
-	if (prStaRec && prStaRec->ucNetTypeIndex == (UINT_8) NETWORK_TYPE_AIS_INDEX)
-		return prAdapter->rWifiVar.rAisSpecificBssInfo.fgBipKeyInstalled;
-	else
+	/* caution: prStaRec might be null ! */
+	if (prStaRec) {
+		P_BSS_INFO_T prBssInfo =
+			GET_BSS_INFO_BY_INDEX(prAdapter,
+			NETWORK_TYPE_P2P_INDEX);
+
+		if (prStaRec->ucNetTypeIndex == (UINT_8) NETWORK_TYPE_AIS_INDEX) {
+			return prAdapter->rWifiVar.rAisSpecificBssInfo.fgBipKeyInstalled;
+		} else if ((prStaRec->ucNetTypeIndex ==
+			(UINT_8) NETWORK_TYPE_P2P_INDEX) &&
+			prBssInfo &&
+			(prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)) {
+			if (prStaRec->rPmfCfg.fgApplyPmf)
+				DBGLOG(RSN, INFO, "AP-STA PMF capable\n");
+			return prStaRec->rPmfCfg.fgApplyPmf;
+		} else {
+			return FALSE;
+		}
+	} else
 		return FALSE;
 }
 
@@ -2677,4 +2790,476 @@ VOID rsnGenerateFTIE(IN P_ADAPTER_T prAdapter, IN OUT P_MSDU_INFO_T prMsduInfo)
 	prMsduInfo->u2FrameLength += ucFtIeSize;
 	kalMemCopy(pucBuffer, prFtIEs->prFTIE, ucFtIeSize);
 }
+
+#if CFG_SUPPORT_802_11W
+/* AP PMF */
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief This routine is called to validate setting
+* if PMF connection capable or not
+* If AP MFPC=1, and STA MFPC=1, we let this as PMF connection
+*
+*
+* \return (none)
+*/
+/*----------------------------------------------------------------------------*/
+UINT_16 rsnPmfCapableValidation(IN P_ADAPTER_T prAdapter,
+	IN P_BSS_INFO_T prBssInfo, IN P_STA_RECORD_T prStaRec)
+{
+	BOOLEAN selfMfpc, selfMfpr, peerMfpc, peerMfpr;
+
+	selfMfpc = prBssInfo->rApPmfCfg.fgMfpc;
+	selfMfpr = prBssInfo->rApPmfCfg.fgMfpr;
+	peerMfpc = prStaRec->rPmfCfg.fgMfpc;
+	peerMfpr = prStaRec->rPmfCfg.fgMfpr;
+
+	DBGLOG(RSN, INFO, "AP mfpc:%d, mfpr:%d / STA mfpc:%d, mfpr:%d\n",
+		selfMfpc, selfMfpr, peerMfpc, peerMfpr);
+
+	if ((selfMfpc == TRUE) && (peerMfpc == FALSE)) {
+		if ((selfMfpr == TRUE) && (peerMfpr == FALSE)) {
+			DBGLOG(RSN, ERROR, "PMF policy violation for case 4\n");
+			return STATUS_CODE_ROBUST_MGMT_FRAME_POLICY_VIOLATION;
+		}
+
+		if (peerMfpr == TRUE) {
+			DBGLOG(RSN, ERROR, "PMF policy violation for case 7\n");
+			return STATUS_CODE_ROBUST_MGMT_FRAME_POLICY_VIOLATION;
+		}
+
+		if ((prBssInfo->u4RsnSelectedAKMSuite ==
+			RSN_AKM_SUITE_SAE) &&
+			prStaRec->rPmfCfg.fgSaeRequireMfp) {
+			DBGLOG(RSN, ERROR,
+				"PMF policy violation for case sae_require_mfp\n");
+			return STATUS_CODE_ROBUST_MGMT_FRAME_POLICY_VIOLATION;
+		}
+	}
+
+	if ((selfMfpc == TRUE) && (peerMfpc == TRUE)) {
+		DBGLOG(RSN, ERROR, "PMF Connection\n");
+		prStaRec->rPmfCfg.fgApplyPmf = TRUE;
+	}
+
+	return STATUS_CODE_SUCCESSFUL;
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief This routine is called to generate TIMEOUT INTERVAL IE for
+* association resp
+* Add Timeout interval IE (56) when PMF invalid association
+*
+*
+* \return (none)
+*/
+/*----------------------------------------------------------------------------*/
+VOID rsnPmfGenerateTimeoutIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo)
+{
+	IE_TIMEOUT_INTERVAL_T *prTimeout;
+	P_STA_RECORD_T prStaRec = NULL;
+
+	ASSERT(prAdapter);
+	ASSERT(prMsduInfo);
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+
+	if (!prStaRec)
+		return;
+
+	prTimeout = (IE_TIMEOUT_INTERVAL_T *)
+		(((PUINT_8) prMsduInfo->prPacket) + prMsduInfo->u2FrameLength);
+
+	/* only when PMF connection, and association error code is 30 */
+	if ((rsnCheckBipKeyInstalled(prAdapter, prStaRec) == TRUE) &&
+		(prStaRec->u2StatusCode == STATUS_CODE_ASSOC_REJECTED_TEMPORARILY)) {
+
+		DBGLOG(RSN, INFO, "rsnPmfGenerateTimeoutIE TRUE\n");
+		prTimeout->ucId = ELEM_ID_TIMEOUT_INTERVAL;
+		prTimeout->ucLength = ELEM_MAX_LEN_TIMEOUT_IE;
+		prTimeout->ucType = IE_TIMEOUT_INTERVAL_TYPE_ASSOC_COMEBACK;
+		prTimeout->u4Value = 1<<10;
+		prMsduInfo->u2FrameLength += IE_SIZE(prTimeout);
+	}
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+*
+* \brief This routine is called to check the Sa query timeout.
+* check if total retry time is greater than 1000ms
+*
+* \retval 1: retry max timeout. 0: not timeout
+* \note
+*      Called by: AAA module, Handle by Sa Query timeout
+*/
+/*----------------------------------------------------------------------------*/
+UINT_8 rsnApCheckSaQueryTimeout(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec)
+{
+	P_BSS_INFO_T prBssInfo;
+	UINT_32 now;
+
+	GET_CURRENT_SYSTIME(&now);
+
+	if (CHECK_FOR_TIMEOUT(now, prStaRec->rPmfCfg.u4SAQueryStart,
+		TU_TO_MSEC(1000))) {
+		DBGLOG(RSN, INFO, "association SA Query timed out\n");
+
+		/* XXX PMF TODO how to report STA REC disconnect?? */
+		/* when SAQ retry count timeout, clear this STA */
+		prStaRec->rPmfCfg.ucSAQueryTimedOut = 1;
+		prStaRec->rPmfCfg.u2TransactionID = 0;
+		prStaRec->rPmfCfg.u4SAQueryCount = 0;
+		cnmTimerStopTimer(prAdapter, &prStaRec->rPmfCfg.rSAQueryTimer);
+
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, NETWORK_TYPE_P2P_INDEX);
+
+		/* refer to p2pRoleFsmRunEventRxDeauthentication*/
+		if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
+			bssRemoveStaRecFromClientList(prAdapter,
+				prBssInfo, prStaRec);
+			/* Indicate disconnect to Host. */
+			p2pFuncDisconnect(prAdapter, prStaRec, FALSE, 0);
+			/* Deactive BSS if PWR is IDLE and no peer */
+			if (IS_NET_PWR_STATE_IDLE(prAdapter, NETWORK_TYPE_P2P_INDEX) &&
+				(prBssInfo->rStaRecOfClientList.u4NumElem == 0)) {
+				/* All Peer disconnected !! Stop BSS now!! */
+				p2pFuncDeauthComplete(prAdapter, prBssInfo);
+			}
+		}
+
+		return 1;
+	}
+
+	return 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+*
+* \brief This routine is called to start the 802.11w sa query timer.
+* This routine is triggered every 201ms, and every time enter function, check
+max timeout
+*
+* \note
+*      Called by: AAA module, Handle TX SAQ request
+*/
+/*----------------------------------------------------------------------------*/
+void rsnApStartSaQueryTimer(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T
+	prStaRec, IN ULONG ulParamPtr)
+{
+	P_BSS_INFO_T prBssInfo;
+	P_MSDU_INFO_T prMsduInfo;
+	P_ACTION_SA_QUERY_FRAME prTxFrame;
+	UINT_16 u2PayloadLen;
+
+	ASSERT(prStaRec);
+
+	DBGLOG(RSN, INFO, "MFP: AP Start Sa Query timer\n");
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, NETWORK_TYPE_P2P_INDEX);
+
+	if (prStaRec->rPmfCfg.u4SAQueryCount > 0 &&
+		rsnApCheckSaQueryTimeout(prAdapter, prStaRec)) {
+		DBGLOG(RSN, INFO, "MFP: retry max timeout, u4SaQueryCount count =%u\n",
+			prStaRec->rPmfCfg.u4SAQueryCount);
+		return;
+	}
+
+	prMsduInfo = (P_MSDU_INFO_T) cnmMgtPktAlloc(prAdapter,
+		MAC_TX_RESERVED_FIELD + PUBLIC_ACTION_MAX_LEN);
+
+	if (!prMsduInfo)
+		return;
+
+	prTxFrame = (P_ACTION_SA_QUERY_FRAME)
+	    ((ULONG) (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
+
+	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
+	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec))
+		prTxFrame->u2FrameCtrl |= MASK_FC_PROTECTED_FRAME;
+	COPY_MAC_ADDR(prTxFrame->aucDestAddr, prStaRec->aucMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucSrcAddr, prBssInfo->aucBSSID);
+	COPY_MAC_ADDR(prTxFrame->aucBSSID, prBssInfo->aucBSSID);
+
+	prTxFrame->ucCategory = CATEGORY_SA_QUERT_ACTION;
+	prTxFrame->ucAction = ACTION_SA_QUERY_REQUEST;
+
+	if (prStaRec->rPmfCfg.u4SAQueryCount == 0)
+		GET_CURRENT_SYSTIME(&prStaRec->rPmfCfg.u4SAQueryStart);
+
+	/* if retry, transcation id ++ */
+	if (prStaRec->rPmfCfg.u4SAQueryCount) {
+		prStaRec->rPmfCfg.u2TransactionID++;
+	} else {
+		/* if first SAQ request, random pick transaction id */
+		prStaRec->rPmfCfg.u2TransactionID = (UINT_16) (kalRandomNumber() & 0xFFFF);
+	}
+
+	DBGLOG(RSN, INFO, "SAQ transaction id:%d\n",
+		prStaRec->rPmfCfg.u2TransactionID);
+
+	/* trnsform U16 to U8 array */
+	prTxFrame->ucTransId[0] = ((prStaRec->rPmfCfg.u2TransactionID & 0xff00) >> 8);
+	prTxFrame->ucTransId[1] = ((prStaRec->rPmfCfg.u2TransactionID & 0x00ff) >> 0);
+
+	prStaRec->rPmfCfg.u4SAQueryCount++;
+
+	u2PayloadLen = 2 + ACTION_SA_QUERY_TR_ID_LEN;
+
+	/* 4 <3> Update information of MSDU_INFO_T */
+	prMsduInfo->eSrc = TX_PACKET_MGMT;
+	prMsduInfo->ucPacketType = HIF_TX_PACKET_TYPE_MGMT;
+	prMsduInfo->ucStaRecIndex = prStaRec->ucIndex;
+	prMsduInfo->ucNetworkType = prStaRec->ucNetTypeIndex;
+	prMsduInfo->ucMacHeaderLength = WLAN_MAC_MGMT_HEADER_LEN;
+	prMsduInfo->fgIs802_1x = FALSE;
+	prMsduInfo->fgIs802_11 = TRUE;
+	prMsduInfo->u2FrameLength = WLAN_MAC_MGMT_HEADER_LEN + u2PayloadLen;
+	prMsduInfo->ucTxSeqNum = nicIncreaseTxSeqNum(prAdapter);
+	prMsduInfo->pfTxDoneHandler = NULL;
+	prMsduInfo->fgIsBasicRate = TRUE;
+
+	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
+		DBGLOG(RSN, INFO, "SAQ Set MSDU_OPT_PROTECTED_FRAME\n");
+		nicTxConfigPktOption(prMsduInfo,
+			MSDU_OPT_PROTECTED_FRAME, TRUE);
+	}
+	/* 4 Enqueue the frame to send this action frame. */
+	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+
+	DBGLOG(RSN, INFO, "AP Set SA Query timer %u (%d Tu)\n",
+		prStaRec->rPmfCfg.u4SAQueryCount, 201);
+
+	cnmTimerStartTimer(prAdapter,
+		&prStaRec->rPmfCfg.rSAQueryTimer, TU_TO_MSEC(201));
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+*
+* \brief This routine is called to start the 802.11w TX SA query.
+*
+*
+* \note
+*      Called by: AAA module, Handle Tx action frame request
+*/
+/*----------------------------------------------------------------------------*/
+void rsnApStartSaQuery(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec)
+{
+	ASSERT(prStaRec);
+
+	DBGLOG(RSN, INFO, "rsnApStartSaQuery\n");
+
+	if (prStaRec) {
+		cnmTimerStopTimer(prAdapter, &prStaRec->rPmfCfg.rSAQueryTimer);
+		cnmTimerInitTimer(prAdapter, &prStaRec->rPmfCfg.rSAQueryTimer,
+			(PFN_MGMT_TIMEOUT_FUNC)rsnApStartSaQueryTimer, (ULONG) prStaRec);
+	}
+
+	if (prStaRec->rPmfCfg.u4SAQueryCount == 0)
+		rsnApStartSaQueryTimer(prAdapter, prStaRec, (ULONG) NULL);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+*
+* \brief This routine is called to stop the 802.11w SA query.
+*
+*
+* \note
+*      Called by: AAA module, stop TX SAQ if receive correct SAQ response
+*/
+/*----------------------------------------------------------------------------*/
+void rsnApStopSaQuery(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec)
+{
+	ASSERT(prStaRec);
+
+	cnmTimerStopTimer(prAdapter, &prStaRec->rPmfCfg.rSAQueryTimer);
+	prStaRec->rPmfCfg.u2TransactionID = 0;
+	prStaRec->rPmfCfg.u4SAQueryCount = 0;
+	prStaRec->rPmfCfg.ucSAQueryTimedOut = 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+*
+* \brief This routine is called to process the 802.11w sa query action frame.
+*
+*
+* \note
+*      Called by: AAA module, Handle Rx action request
+*/
+/*----------------------------------------------------------------------------*/
+void rsnApSaQueryRequest(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
+{
+	P_BSS_INFO_T prBssInfo;
+	P_MSDU_INFO_T prMsduInfo;
+	P_ACTION_SA_QUERY_FRAME prRxFrame = NULL;
+	UINT_16 u2PayloadLen;
+	P_STA_RECORD_T prStaRec;
+	P_ACTION_SA_QUERY_FRAME prTxFrame;
+
+	if (!prSwRfb)
+		return;
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+	if (!prStaRec)		/* Todo:: for not AIS check */
+		return;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, NETWORK_TYPE_P2P_INDEX);
+	ASSERT(prBssInfo);
+
+	prRxFrame = (P_ACTION_SA_QUERY_FRAME) prSwRfb->pvHeader;
+	if (!prRxFrame)
+		return;
+
+	DBGLOG(RSN, INFO,
+		"IEEE 802.11: AP Received SA Query Request from " MACSTR "\n",
+		MAC2STR(prStaRec->aucMacAddr));
+
+	DBGLOG_MEM8(RSN, INFO, prRxFrame->ucTransId, ACTION_SA_QUERY_TR_ID_LEN);
+
+	if (!rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
+		DBGLOG(RSN, INFO, "IEEE 802.11: AP Ignore SA Query Request non-PMF STA "
+		       MACSTR "\n", MAC2STR(prStaRec->aucMacAddr));
+		return;
+	}
+
+	DBGLOG(RSN, INFO,
+		"IEEE 802.11: Sending SA Query Response to " MACSTR "\n",
+		MAC2STR(prStaRec->aucMacAddr));
+
+	prMsduInfo = (P_MSDU_INFO_T)
+		cnmMgtPktAlloc(prAdapter, MAC_TX_RESERVED_FIELD + PUBLIC_ACTION_MAX_LEN);
+
+	if (!prMsduInfo)
+		return;
+
+	/* drop cipher mismatch */
+	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
+		P_HIF_RX_HEADER_T prHifRxHdr = prSwRfb->prHifRxHdr;
+
+		if (prHifRxHdr->ucReserved & CONTROL_FLAG_UC_MGMT_NO_ENC) {
+			/* if cipher mismatch, or incorrect encrypt, just drop */
+			DBGLOG(RSN, ERROR, "drop SAQ req CM/CLM=1\n");
+			return;
+		}
+	}
+
+	prTxFrame = (P_ACTION_SA_QUERY_FRAME)
+	    ((ULONG) (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
+
+	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
+	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
+		prTxFrame->u2FrameCtrl |= MASK_FC_PROTECTED_FRAME;
+		DBGLOG(RSN, INFO, "AP SAQ resp set FC PF bit\n");
+	}
+	COPY_MAC_ADDR(prTxFrame->aucDestAddr, prStaRec->aucMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucSrcAddr, prBssInfo->aucBSSID);
+	COPY_MAC_ADDR(prTxFrame->aucBSSID, prBssInfo->aucBSSID);
+
+	prTxFrame->ucCategory = CATEGORY_SA_QUERT_ACTION;
+	prTxFrame->ucAction = ACTION_SA_QUERY_RESPONSE;
+
+	kalMemCopy(prTxFrame->ucTransId, prRxFrame->ucTransId, ACTION_SA_QUERY_TR_ID_LEN);
+
+	u2PayloadLen = 2 + ACTION_SA_QUERY_TR_ID_LEN;
+
+	/* 4 <3> Update information of MSDU_INFO_T */
+	prMsduInfo->eSrc = TX_PACKET_MGMT;
+	prMsduInfo->ucPacketType = HIF_TX_PACKET_TYPE_MGMT;
+	prMsduInfo->ucStaRecIndex = prStaRec->ucIndex;
+	prMsduInfo->ucNetworkType = prStaRec->ucNetTypeIndex;
+	prMsduInfo->ucMacHeaderLength = WLAN_MAC_MGMT_HEADER_LEN;
+	prMsduInfo->fgIs802_1x = FALSE;
+	prMsduInfo->fgIs802_11 = TRUE;
+	prMsduInfo->u2FrameLength = WLAN_MAC_MGMT_HEADER_LEN + u2PayloadLen;
+	prMsduInfo->ucTxSeqNum = nicIncreaseTxSeqNum(prAdapter);
+	prMsduInfo->pfTxDoneHandler = NULL;
+	prMsduInfo->fgIsBasicRate = TRUE;
+
+	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
+		DBGLOG(RSN, INFO, "AP SAQ resp set MSDU_OPT_PROTECTED_FRAME\n");
+		nicTxConfigPktOption(prMsduInfo,
+			MSDU_OPT_PROTECTED_FRAME, TRUE);
+	}
+
+	/* 4 Enqueue the frame to send this action frame. */
+	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+*
+* \brief This routine is called to process the 802.11w sa query action frame.
+*
+*
+* \note
+*      Called by: AAA module, Handle Rx action request
+*/
+/*----------------------------------------------------------------------------*/
+void rsnApSaQueryAction(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
+{
+	P_ACTION_SA_QUERY_FRAME prRxFrame;
+	P_STA_RECORD_T prStaRec;
+	UINT_16 u2SwapTrID;
+
+	prRxFrame = (P_ACTION_SA_QUERY_FRAME) prSwRfb->pvHeader;
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+
+	if (prStaRec == NULL) {
+		DBGLOG(RSN, INFO, "rsnApSaQueryAction: prStaRec is NULL");
+		return;
+	}
+
+	DBGLOG(RSN, TRACE,
+		"AP PMF SAQ action enter from " MACSTR "\n",
+		MAC2STR(prStaRec->aucMacAddr));
+	if (prSwRfb->u2PacketLen < ACTION_SA_QUERY_TR_ID_LEN) {
+		DBGLOG(RSN, INFO, "IEEE 802.11: Too short SA Query Action frame (len=%lu)\n",
+		       (unsigned long)prSwRfb->u2PacketLen);
+		return;
+	}
+
+	if (prRxFrame->ucAction == ACTION_SA_QUERY_REQUEST) {
+		rsnApSaQueryRequest(prAdapter, prSwRfb);
+		return;
+	}
+
+	if (prRxFrame->ucAction != ACTION_SA_QUERY_RESPONSE) {
+		DBGLOG(RSN, INFO, "IEEE 802.11: Unexpected SA Query Action %d\n",
+			prRxFrame->ucAction);
+		return;
+	}
+
+	DBGLOG(RSN, INFO,
+		"IEEE 802.11: Received SA Query Response from " MACSTR "\n",
+		MAC2STR(prStaRec->aucMacAddr));
+
+	DBGLOG_MEM8(RSN, INFO, prRxFrame->ucTransId, ACTION_SA_QUERY_TR_ID_LEN);
+
+	/* MLME-SAQuery.confirm */
+	/* transform to network byte order */
+	DBGLOG(RSN, TRACE,
+		"IEEE 802.11: prStaRec->rPmfCfg.u2TransactionID: %d\n",
+		prStaRec->rPmfCfg.u2TransactionID);
+	u2SwapTrID = htons(prStaRec->rPmfCfg.u2TransactionID);
+	DBGLOG(RSN, TRACE,
+		"IEEE 802.11: u2SwapTrID: %d\n",
+		u2SwapTrID);
+	if (kalMemCmp((UINT_8 *)&u2SwapTrID, prRxFrame->ucTransId,
+		ACTION_SA_QUERY_TR_ID_LEN) == 0) {
+		DBGLOG(RSN, INFO, "AP Reply to SA Query received\n");
+		rsnApStopSaQuery(prAdapter, prStaRec);
+	} else {
+		DBGLOG(RSN, INFO,
+			"IEEE 802.11: AP No matching SA Query transaction identifier found\n");
+	}
+
+}
+
+#endif /* CFG_SUPPORT_802_11W */
 

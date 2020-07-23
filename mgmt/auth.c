@@ -527,10 +527,18 @@ WLAN_STATUS authCheckRxAuthFrameTransSeq(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T
 	/* WLAN_GET_FIELD_16(&prAuthFrame->u2AuthTransSeqNo, &u2RxTransactionSeqNum); */
 	u2RxTransactionSeqNum = prAuthFrame->u2AuthTransSeqNo;	/* NOTE(Kevin): Optimized for ARM */
 
+	DBGLOG(SAA, LOUD,
+		   "Authentication Packet: Auth Trans Seq No = %d\n",
+		   u2RxTransactionSeqNum);
+
 	switch (u2RxTransactionSeqNum) {
 	case AUTH_TRANSACTION_SEQ_2:
 	case AUTH_TRANSACTION_SEQ_4:
-		saaFsmRunEventRxAuth(prAdapter, prSwRfb);
+		if (prStaRec && IS_STA_IN_P2P(prStaRec) &&
+			!IS_AP_STA(prStaRec))
+			aaaFsmRunEventRxAuth(prAdapter, prSwRfb);
+		else
+			saaFsmRunEventRxAuth(prAdapter, prSwRfb);
 		break;
 
 	case AUTH_TRANSACTION_SEQ_1:
@@ -973,14 +981,22 @@ authSendDeauthFrame(IN P_ADAPTER_T prAdapter,
 					  pucReceiveAddr, pucTransmitAddr, pucBssid, u2ReasonCode);
 
 #if CFG_SUPPORT_802_11W
+	/* AP PMF */
 	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
-		P_WLAN_DEAUTH_FRAME_T prDeauthFrame;
+		/* PMF certification 4.3.3.1, 4.3.3.2 send unprotected deauth reason 6/7 */
+		/* if (AP mode & not for PMF reply case) OR (STA PMF) */
+		if (((prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) &&
+			(prStaRec->rPmfCfg.fgRxDeauthResp != TRUE)) ||
+			(prBssInfo->ucNetTypeIndex == (UINT_8) NETWORK_TYPE_AIS_INDEX)) {
+			P_WLAN_DEAUTH_FRAME_T prDeauthFrame;
 
-		prDeauthFrame =
-		    (P_WLAN_DEAUTH_FRAME_T) (PUINT_8) ((ULONG) (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
+			prDeauthFrame =
+			    (P_WLAN_DEAUTH_FRAME_T) (PUINT_8) ((ULONG)
+			    (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
 
-		prDeauthFrame->u2FrameCtrl |= MASK_FC_PROTECTED_FRAME;
-		DBGLOG(TX, WARN, "authSendDeauthFrame with protection\n");
+			prDeauthFrame->u2FrameCtrl |= MASK_FC_PROTECTED_FRAME;
+			DBGLOG(TX, WARN, "authSendDeauthFrame with protection\n");
+		}
 	}
 #endif
 
@@ -998,6 +1014,20 @@ authSendDeauthFrame(IN P_ADAPTER_T prAdapter,
 	prMsduInfo->fgIsBasicRate = TRUE;
 	DBGLOG(SAA, INFO, "Sending Deauth, network: %d, seqNo %d, reason: %d\n",
 		eNetTypeIndex, prMsduInfo->ucTxSeqNum, u2ReasonCode);
+
+#if CFG_SUPPORT_802_11W
+	/* AP PMF */
+	/* caution: access prStaRec only if true */
+	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
+		/* 4.3.3.1 send unprotected deauth reason 6/7 */
+		if (prStaRec->rPmfCfg.fgRxDeauthResp != TRUE) {
+			DBGLOG(RSN, INFO, "Deauth Set MSDU_OPT_PROTECTED_FRAME\n");
+			nicTxConfigPktOption(prMsduInfo,
+				MSDU_OPT_PROTECTED_FRAME, TRUE);
+		}
+		prStaRec->rPmfCfg.fgRxDeauthResp = FALSE;
+	}
+#endif
 
 	/* 4 <8> Inform TXM to send this Deauthentication frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
@@ -1103,6 +1133,53 @@ authProcessRxAuth1Frame(IN P_ADAPTER_T prAdapter,
 
 	if (prAuthFrame->u2AuthTransSeqNo != u2ExpectedTransSeqNum)
 		u2ReturnStatusCode = STATUS_CODE_AUTH_OUT_OF_SEQ;
+
+	*pu2ReturnStatusCode = u2ReturnStatusCode;
+
+	return WLAN_STATUS_SUCCESS;
+
+}				/* end of authProcessRxAuth1Frame() */
+
+WLAN_STATUS
+authProcessRxAuthFrame(IN P_ADAPTER_T prAdapter,
+			IN P_SW_RFB_T prSwRfb,
+			IN P_BSS_INFO_T prBssInfo,
+			OUT PUINT_16 pu2ReturnStatusCode)
+{
+	P_WLAN_AUTH_FRAME_T prAuthFrame;
+	UINT_16 u2ReturnStatusCode = STATUS_CODE_SUCCESSFUL;
+
+	ASSERT(prSwRfb);
+	ASSERT(pu2ReturnStatusCode);
+
+	if (!prBssInfo)
+		return WLAN_STATUS_FAILURE;
+
+	/* 4 <1> locate the Authentication Frame. */
+	prAuthFrame = (P_WLAN_AUTH_FRAME_T) prSwRfb->pvHeader;
+
+	/* 4 <2> Check the BSSID */
+	if (UNEQUAL_MAC_ADDR(prAuthFrame->aucBSSID, prBssInfo->aucBSSID))
+		return WLAN_STATUS_FAILURE;	/* Just Ignore this MMPDU */
+	/* 4 <3> Check the SA, which should not be MC/BC */
+	if (prAuthFrame->aucSrcAddr[0] & BIT(0)) {
+		DBGLOG(P2P, WARN, "Invalid STA MAC with MC/BC bit set: %pM\n",
+				   prAuthFrame->aucSrcAddr);
+		return WLAN_STATUS_FAILURE;
+	}
+	/* 4 <4> Parse the Fixed Fields of Authentication Frame Body. */
+	if (prAuthFrame->u2AuthAlgNum != AUTH_ALGORITHM_NUM_OPEN_SYSTEM &&
+		prAuthFrame->u2AuthAlgNum != AUTH_ALGORITHM_NUM_SAE)
+		u2ReturnStatusCode = STATUS_CODE_AUTH_ALGORITHM_NOT_SUPPORTED;
+	else if (prAuthFrame->u2AuthAlgNum == AUTH_ALGORITHM_NUM_OPEN_SYSTEM &&
+		prAuthFrame->u2AuthTransSeqNo != AUTH_TRANSACTION_SEQ_1)
+		u2ReturnStatusCode = STATUS_CODE_AUTH_OUT_OF_SEQ;
+	else if (prAuthFrame->u2AuthAlgNum == AUTH_ALGORITHM_NUM_SAE &&
+		prAuthFrame->u2AuthTransSeqNo != AUTH_TRANSACTION_SEQ_1 &&
+		prAuthFrame->u2AuthTransSeqNo != AUTH_TRANSACTION_SEQ_2)
+		u2ReturnStatusCode = STATUS_CODE_AUTH_OUT_OF_SEQ;
+
+	DBGLOG(AAA, LOUD, "u2ReturnStatusCode = %d\n", u2ReturnStatusCode);
 
 	*pu2ReturnStatusCode = u2ReturnStatusCode;
 

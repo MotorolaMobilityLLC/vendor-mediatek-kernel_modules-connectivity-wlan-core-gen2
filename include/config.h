@@ -639,6 +639,8 @@
 
 #define CFG_AUTO_CHANNEL_SEL_SUPPORT            1
 
+#define CFG_SUPPORT_SOFTAP_WPA3	1
+
 #define CFG_SET_BCN_CAPINFO_BY_DRIVER           0
 
 

@@ -1994,3 +1994,17 @@ UINT_32 nicTxGetFreeCmdCount(IN P_ADAPTER_T prAdapter)
 
 	return prAdapter->rFreeCmdList.u4NumElem;
 }
+
+VOID nicTxConfigPktOption(P_MSDU_INFO_T prMsduInfo, UINT_32 u4OptionMask,
+	BOOLEAN fgSetOption)
+{
+	/*
+	 * prMsduInfo->fgIsBIP = fgSetOption;
+	 * if (fgSetOption)
+	 *	prMsduInfo->u4Option |= u4OptionMask;
+	 * else
+	 *	prMsduInfo->u4Option &= ~u4OptionMask;
+	 */
+}
+
+

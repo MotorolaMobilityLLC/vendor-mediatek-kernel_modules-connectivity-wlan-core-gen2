@@ -1507,6 +1507,7 @@ BOOLEAN
 p2pFuncValidateAuth(IN P_ADAPTER_T prAdapter,
 		    IN P_SW_RFB_T prSwRfb, IN PP_STA_RECORD_T pprStaRec, OUT PUINT_16 pu2StatusCode)
 {
+	BOOLEAN fgPmfConn = FALSE;
 	BOOLEAN fgReplyAuth = TRUE;
 	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
 	P_STA_RECORD_T prStaRec = (P_STA_RECORD_T) NULL;
@@ -1576,6 +1577,15 @@ p2pFuncValidateAuth(IN P_ADAPTER_T prAdapter,
 			/* NOTE(Kevin): Better to change state here, not at TX Done */
 			cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
 		} else {
+#if CFG_SUPPORT_802_11W
+			/* AP PMF. if PMF connection, do not reset state & FSM */
+			fgPmfConn = rsnCheckBipKeyInstalled(prAdapter, prStaRec);
+			if (fgPmfConn) {
+				DBGLOG(P2P, WARN, "PMF Connction, return false\n");
+				return FALSE;
+			}
+#endif
+
 			prSwRfb->ucStaRecIdx = prStaRec->ucIndex;
 
 			prStaRec->eStaType = STA_TYPE_P2P_GC;
@@ -2172,6 +2182,8 @@ VOID p2pFuncParseBeaconIEs(IN P_ADAPTER_T prAdapter,
 	BOOLEAN ucOldSecMode = FALSE;
 	UINT_8 ucOuiType;
 	UINT_16 u2SubTypeVersion;
+	UINT_8 i = 0;
+	RSN_INFO_T rRsnIe;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prP2pBssInfo != NULL));
@@ -2330,8 +2342,6 @@ VOID p2pFuncParseBeaconIEs(IN P_ADAPTER_T prAdapter,
 				break;
 			case ELEM_ID_RSN:	/* 48 */ /* V */
 				{
-					RSN_INFO_T rRsnIe;
-
 					DBGLOG(P2P, TRACE, "RSN IE\n");
 					kalP2PSetCipher(prAdapter->prGlueInfo, IW_AUTH_CIPHER_CCMP);
 					ucNewSecMode = TRUE;
@@ -2342,7 +2352,47 @@ VOID p2pFuncParseBeaconIEs(IN P_ADAPTER_T prAdapter,
 						prP2pBssInfo->u4RsnSelectedPairwiseCipher = RSN_CIPHER_SUITE_CCMP;
 						prP2pBssInfo->u4RsnSelectedAKMSuite = RSN_AKM_SUITE_PSK;
 						prP2pBssInfo->u2RsnSelectedCapInfo = rRsnIe.u2RsnCap;
+						DBGLOG(RSN, TRACE, "RsnIe CAP:0x%x\n",
+							rRsnIe.u2RsnCap);
 					}
+#if CFG_SUPPORT_802_11W
+				/* AP PMF */
+				prP2pBssInfo->rApPmfCfg.fgMfpc =
+					(rRsnIe.u2RsnCap & ELEM_WPA_CAP_MFPC) ? 1 : 0;
+				prP2pBssInfo->rApPmfCfg.fgMfpr =
+					(rRsnIe.u2RsnCap & ELEM_WPA_CAP_MFPR) ? 1 : 0;
+				prP2pSpecificBssInfo->u4KeyMgtSuiteCount
+					= (rRsnIe.u4AuthKeyMgtSuiteCount < P2P_MAX_AKM_SUITES)
+					? rRsnIe.u4AuthKeyMgtSuiteCount
+					: P2P_MAX_AKM_SUITES;
+				for (i = 0; i < rRsnIe.u4AuthKeyMgtSuiteCount; i++) {
+					if ((rRsnIe.au4AuthKeyMgtSuite[i] ==
+						RSN_AKM_SUITE_PSK_SHA256) ||
+						(rRsnIe.au4AuthKeyMgtSuite[i] ==
+						RSN_AKM_SUITE_802_1X_SHA256)) {
+						DBGLOG(RSN, INFO, "SHA256 support\n");
+						/* over-write u4RsnSelectedAKMSuite by SHA256 AKM */
+						prP2pBssInfo->u4RsnSelectedAKMSuite =
+							rRsnIe.au4AuthKeyMgtSuite[i];
+						prP2pBssInfo->rApPmfCfg.fgSha256 = TRUE;
+						break;
+					} else if (rRsnIe.au4AuthKeyMgtSuite[i]
+						== RSN_AKM_SUITE_SAE)
+						prP2pBssInfo->u4RsnSelectedAKMSuite =
+							rRsnIe.au4AuthKeyMgtSuite[i];
+
+					if (i < P2P_MAX_AKM_SUITES) {
+						prP2pSpecificBssInfo->au4KeyMgtSuite[i]
+						= rRsnIe.au4AuthKeyMgtSuite[i];
+					}
+
+				}
+				DBGLOG(RSN, ERROR, "bcn mfpc:%d, mfpr:%d, sha256:%d, 0x%04x\n",
+					prP2pBssInfo->rApPmfCfg.fgMfpc,
+					prP2pBssInfo->rApPmfCfg.fgMfpr,
+					prP2pBssInfo->rApPmfCfg.fgSha256,
+					prP2pBssInfo->u4RsnSelectedAKMSuite);
+#endif
 				}
 				break;
 			case ELEM_ID_EXTENDED_SUP_RATES:	/* 50 */ /* V */

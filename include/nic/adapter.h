@@ -404,6 +404,11 @@ struct _BSS_INFO_T {
 
 	BOOLEAN fgIsDelayIndication;
 	enum ENUM_IFTYPE eIftype;
+
+#if CFG_SUPPORT_802_11W
+	/* AP PMF */
+	struct AP_PMF_CFG rApPmfCfg;
+#endif
 };
 
 struct ESS_CHNL_INFO {

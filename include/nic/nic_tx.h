@@ -106,6 +106,8 @@
 #define NIC_TX_TIME_THRESHOLD                       100	/* in unit of ms */
 #endif
 
+#define MSDU_OPT_PROTECTED_FRAME BIT(13)
+
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -403,6 +405,9 @@ WLAN_STATUS nicTxInitResetResource(IN P_ADAPTER_T prAdapter);
 WLAN_STATUS nicTxEnqueueMsdu(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo);
 
 UINT_32 nicTxGetFreeCmdCount(IN P_ADAPTER_T prAdapter);
+
+VOID nicTxConfigPktOption(IN P_MSDU_INFO_T prMsduInfo, IN UINT_32 u4OptionMask,
+	IN BOOLEAN fgSetOption);
 
 /*******************************************************************************
 *                              F U N C T I O N S

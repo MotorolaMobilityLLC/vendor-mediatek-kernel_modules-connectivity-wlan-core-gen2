@@ -322,6 +322,8 @@ int
 mtk_p2p_cfg80211_set_default_key(struct wiphy *wiphy,
 				 struct net_device *netdev, u8 key_index, bool unicast, bool multicast);
 
+int mtk_p2p_cfg80211_set_mgmt_key(struct wiphy *wiphy, struct net_device *dev, u8 key_index);
+
 int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev,
 					const u8 *mac, struct station_info *sinfo);
 

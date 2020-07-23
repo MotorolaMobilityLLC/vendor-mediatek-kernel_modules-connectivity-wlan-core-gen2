@@ -1371,6 +1371,9 @@ struct _P2P_SPECIFIC_BSS_INFO_T {
 	PARAM_CUSTOM_NOA_PARAM_STRUCT_T rNoaParam;
 	PARAM_CUSTOM_OPPPS_PARAM_STRUCT_T rOppPsParam;
 
+	uint32_t u4KeyMgtSuiteCount;
+	uint32_t au4KeyMgtSuite[P2P_MAX_AKM_SUITES];
+
 	UINT_16 u2WpaIeLen;
 	UINT_8 aucWpaIeBuffer[ELEM_HDR_LEN + ELEM_MAX_LEN_WPA];
 };

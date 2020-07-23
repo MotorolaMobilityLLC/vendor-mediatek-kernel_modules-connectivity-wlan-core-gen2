@@ -87,6 +87,7 @@ static struct cfg80211_ops mtk_p2p_ops = {
 	.get_key = mtk_p2p_cfg80211_get_key,
 	.del_key = mtk_p2p_cfg80211_del_key,
 	.set_default_key = mtk_p2p_cfg80211_set_default_key,
+	.set_default_mgmt_key = mtk_p2p_cfg80211_set_mgmt_key,
 	.join_ibss = mtk_p2p_cfg80211_join_ibss,
 	.leave_ibss = mtk_p2p_cfg80211_leave_ibss,
 	.set_tx_power = mtk_p2p_cfg80211_set_txpower,
@@ -179,6 +180,13 @@ static const struct ieee80211_txrx_stypes
 	[NL80211_IFTYPE_AP] = {
 		.tx = 0xffff,
 		.rx = BIT(IEEE80211_STYPE_PROBE_REQ >> 4) | BIT(IEEE80211_STYPE_ACTION >> 4)
+#if CFG_SUPPORT_SOFTAP_WPA3
+			| BIT(IEEE80211_STYPE_ASSOC_REQ >> 4) |
+			  BIT(IEEE80211_STYPE_REASSOC_REQ >> 4) |
+			  BIT(IEEE80211_STYPE_DISASSOC >> 4) |
+			  BIT(IEEE80211_STYPE_AUTH >> 4) |
+			  BIT(IEEE80211_STYPE_DEAUTH >> 4)
+#endif
 	},
 	[NL80211_IFTYPE_AP_VLAN] = {
 		/* copy AP */
@@ -730,6 +738,9 @@ BOOLEAN glP2pCreateWirelessDevice(P_GLUE_INFO_T prGlueInfo)
 	prWiphy->bands[IEEE80211_BAND_5GHZ] = &mtk_band_5ghz;
 
 	prWiphy->mgmt_stypes = mtk_cfg80211_default_mgmt_stypes;
+#if CFG_SUPPORT_SOFTAP_WPA3
+	prWiphy->features |= NL80211_FEATURE_SAE;
+#endif
 	prWiphy->max_remain_on_channel_duration = 500;
 	prWiphy->cipher_suites = mtk_cipher_suites;
 	prWiphy->n_cipher_suites = ARRAY_SIZE(mtk_cipher_suites);

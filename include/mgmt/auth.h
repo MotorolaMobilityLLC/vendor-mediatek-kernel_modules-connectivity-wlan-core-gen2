@@ -94,6 +94,12 @@ authProcessRxAuth1Frame(IN P_ADAPTER_T prAdapter,
 			IN UINT_16 u2ExpectedAuthAlgNum,
 			IN UINT_16 u2ExpectedTransSeqNum, OUT PUINT_16 pu2ReturnStatusCode);
 
+WLAN_STATUS
+authProcessRxAuthFrame(IN P_ADAPTER_T prAdapter,
+			IN P_SW_RFB_T prSwRfb,
+			IN P_BSS_INFO_T prBssInfo,
+			OUT PUINT_16 pu2ReturnStatusCode);
+
 VOID authAddMDIE(IN P_ADAPTER_T prAdapter, IN OUT P_MSDU_INFO_T prMsduInfo);
 
 UINT_32 authCalculateRSNIELen(P_ADAPTER_T prAdapter, ENUM_NETWORK_TYPE_INDEX_T eNetTypeIndex, P_STA_RECORD_T prStaRec);

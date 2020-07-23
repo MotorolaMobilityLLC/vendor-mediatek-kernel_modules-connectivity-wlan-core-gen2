@@ -132,44 +132,90 @@ int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
 	UINT_32 u4BufLen = 0;
 	PARAM_KEY_T rKey;
+	const UINT_8 aucBCAddr[] = BC_MAC_ADDR;
 
 	ASSERT(wiphy);
 
 	prGlueInfo = *((P_GLUE_INFO_T *) wiphy_priv(wiphy));
 
+	DBGLOG(RSN, TRACE, "mtk_p2p_cfg80211_add_key\n");
+
+	if (mac_addr) {
+		DBGLOG(RSN, TRACE,
+		   "keyIdx = %d pairwise = %d mac = " MACSTR "\n", key_index, pairwise,
+			MAC2STR(mac_addr));
+	} else {
+		DBGLOG(RSN, TRACE, "keyIdx = %d pairwise = %d null mac\n", key_index,
+			pairwise);
+	}
+	DBGLOG(RSN, TRACE, "Cipher = %x\n", params->cipher);
+	DBGLOG_MEM8(RSN, TRACE, params->key, params->key_len);
+
+	if (params->key_len > 32) {
+		DBGLOG(RSN, WARN, "key_len [%d] is invalid!\n",
+			params->key_len);
+		return -EINVAL;
+	}
+
 	kalMemZero(&rKey, sizeof(PARAM_KEY_T));
 
-	DBGLOG(P2P, INFO, "--> %s()\n", __func__);
-
 	rKey.u4KeyIndex = key_index;
-	if (mac_addr) {
-		ether_addr_copy(rKey.arBSSID, mac_addr);
-		if ((rKey.arBSSID[0] == 0x00) && (rKey.arBSSID[1] == 0x00) && (rKey.arBSSID[2] == 0x00) &&
-		    (rKey.arBSSID[3] == 0x00) && (rKey.arBSSID[4] == 0x00) && (rKey.arBSSID[5] == 0x00)) {
-			rKey.arBSSID[0] = 0xff;
-			rKey.arBSSID[1] = 0xff;
-			rKey.arBSSID[2] = 0xff;
-			rKey.arBSSID[3] = 0xff;
-			rKey.arBSSID[4] = 0xff;
-			rKey.arBSSID[5] = 0xff;
+
+	if (params->cipher) {
+		switch (params->cipher) {
+		case WLAN_CIPHER_SUITE_WEP40:
+			rKey.ucCipher = CIPHER_SUITE_WEP40;
+			break;
+		case WLAN_CIPHER_SUITE_WEP104:
+			rKey.ucCipher = CIPHER_SUITE_WEP104;
+			break;
+#if 0
+		case WLAN_CIPHER_SUITE_WEP128:
+			rKey.ucCipher = CIPHER_SUITE_WEP128;
+			break;
+#endif
+		case WLAN_CIPHER_SUITE_TKIP:
+			rKey.ucCipher = CIPHER_SUITE_TKIP;
+			break;
+		case WLAN_CIPHER_SUITE_CCMP:
+			rKey.ucCipher = CIPHER_SUITE_CCMP;
+			break;
+#if 0
+		case WLAN_CIPHER_SUITE_GCMP:
+			rKey.ucCipher = CIPHER_SUITE_GCMP;
+			break;
+		case WLAN_CIPHER_SUITE_CCMP_256:
+			rKey.ucCipher = CIPHER_SUITE_CCMP256;
+			break;
+#endif
+		case WLAN_CIPHER_SUITE_SMS4:
+			rKey.ucCipher = CIPHER_SUITE_WPI;
+			break;
+
+		case WLAN_CIPHER_SUITE_AES_CMAC:
+			rKey.ucCipher = CIPHER_SUITE_BIP;
+			break;
+		default:
+			ASSERT(FALSE);
 		}
-		if (rKey.arBSSID[0] != 0xFF) {
-			rKey.u4KeyIndex |= BIT(31);
-			if ((rKey.arBSSID[0] != 0x00) || (rKey.arBSSID[1] != 0x00) || (rKey.arBSSID[2] != 0x00) ||
-			    (rKey.arBSSID[3] != 0x00) || (rKey.arBSSID[4] != 0x00) || (rKey.arBSSID[5] != 0x00))
-				rKey.u4KeyIndex |= BIT(30);
-		} else {
-			rKey.u4KeyIndex |= BIT(31);
-		}
-	} else {
-		rKey.arBSSID[0] = 0xff;
-		rKey.arBSSID[1] = 0xff;
-		rKey.arBSSID[2] = 0xff;
-		rKey.arBSSID[3] = 0xff;
-		rKey.arBSSID[4] = 0xff;
-		rKey.arBSSID[5] = 0xff;
-		rKey.u4KeyIndex |= BIT(31);	/* ???? */
 	}
+
+
+	/* For BC addr case: ex: AP mode,
+	 * driver_nl80211 will not have mac_addr
+	 */
+	if (pairwise) {
+		rKey.u4KeyIndex |= BIT(31);	/* Tx */
+		rKey.u4KeyIndex |= BIT(30);	/* Pairwise */
+		COPY_MAC_ADDR(rKey.arBSSID, mac_addr);
+	} else {
+		COPY_MAC_ADDR(rKey.arBSSID, aucBCAddr);
+	}
+
+	/* Check if add key under AP mode */
+	if (kalP2PGetRole(prGlueInfo) == 2)
+		rKey.u4KeyIndex |= BIT(28); /* authenticator */
+
 	if (params->key) {
 		/* rKey.aucKeyMaterial[0] = kalMemAlloc(params->key_len, VIR_MEM_TYPE); */
 		kalMemCopy(rKey.aucKeyMaterial, params->key, params->key_len);
@@ -251,6 +297,14 @@ mtk_p2p_cfg80211_set_default_key(struct wiphy *wiphy,
 	/* not implemented yet */
 
 	return WLAN_STATUS_SUCCESS;
+}
+
+int mtk_p2p_cfg80211_set_mgmt_key(struct wiphy *wiphy, struct net_device *dev
+, u8 key_index)
+{
+	DBGLOG(RSN, INFO, "mtk_p2p_cfg80211_set_mgmt_key, kid:%d\n", key_index);
+
+	return 0;
 }
 
 int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev,
@@ -1476,6 +1530,30 @@ void mtk_p2p_cfg80211_mgmt_frame_register(IN struct wiphy *wiphy,
 				DBGLOG(P2P, TRACE, "Close packet filer action frame.\n");
 			}
 			break;
+#if CFG_SUPPORT_SOFTAP_WPA3
+		case MAC_FRAME_AUTH:
+			if (reg) {
+				prGlueInfo->prP2PInfo->u4OsMgmtFrameFilter
+					|= PARAM_PACKET_FILTER_AUTH;
+				DBGLOG(P2P, TRACE, "Open packet filer auth request\n");
+			} else {
+				prGlueInfo->prP2PInfo->u4OsMgmtFrameFilter
+					&= ~PARAM_PACKET_FILTER_AUTH;
+				DBGLOG(P2P, TRACE, "Close packet filer auth request\n");
+			}
+			break;
+		case MAC_FRAME_ASSOC_REQ:
+			if (reg) {
+				prGlueInfo->prP2PInfo->u4OsMgmtFrameFilter
+					|= PARAM_PACKET_FILTER_ASSOC_REQ;
+				DBGLOG(P2P, TRACE, "Open packet filer assoc request\n");
+			} else {
+				prGlueInfo->prP2PInfo->u4OsMgmtFrameFilter
+					&= ~PARAM_PACKET_FILTER_ASSOC_REQ;
+				DBGLOG(P2P, TRACE, "Close packet filer assoc request\n");
+			}
+			break;
+#endif
 		default:
 			DBGLOG(P2P, ERROR, "Ask frog to add code for mgmt:%x\n", frame_type);
 			break;

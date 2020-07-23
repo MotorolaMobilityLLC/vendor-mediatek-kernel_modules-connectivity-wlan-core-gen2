@@ -63,6 +63,10 @@
 #define RSN_AKM_SUITE_802_1X_SHA256     0x05AC0F00
 #define RSN_AKM_SUITE_PSK_SHA256        0x06AC0F00
 #endif
+#define RSN_AKM_SUITE_SAE               0x08AC0F00
+#define RSN_AKM_SUITE_8021X_SUITE_B     0x0BAC0F00
+#define RSN_AKM_SUITE_8021X_SUITE_B_192 0x0CAC0F00
+#define RSN_AKM_SUITE_OWE               0x12AC0F00
 
 #define WPA_AKM_SUITE_NONE              0x00F25000
 #define WPA_AKM_SUITE_802_1X            0x01F25000
@@ -128,6 +132,8 @@
 #define RSN_IE(fp)              ((P_RSN_INFO_ELEM_T) fp)
 #define WPA_IE(fp)              ((P_WPA_INFO_ELEM_T) fp)
 
+#define ELEM_MAX_LEN_TIMEOUT_IE          (5)
+
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
@@ -155,7 +161,8 @@ rsnParseCheckForWFAInfoElem(IN P_ADAPTER_T prAdapter,
 BOOLEAN rsnIsSuitableBSS(IN P_ADAPTER_T prAdapter, IN P_RSN_INFO_T prBssRsnInfo);
 
 #if CFG_SUPPORT_AAA
-void rsnParserCheckForRSNCCMPPSK(P_ADAPTER_T prAdapter, P_RSN_INFO_ELEM_T prIe, PUINT_16 pu2StatusCode);
+void rsnParserCheckForRSNCCMPPSK(P_ADAPTER_T prAdapter, P_RSN_INFO_ELEM_T prIe,
+	P_STA_RECORD_T prStaRec, PUINT_16 pu2StatusCode);
 #endif
 
 VOID rsnTkipHandleMICFailure(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prSta, IN BOOLEAN fgErrorKeyType);
@@ -190,7 +197,17 @@ void rsnSaQueryRequest(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb);
 void rsnSaQueryAction(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb);
 
 BOOLEAN rsnCheckRxMgmt(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, IN UINT_8 ucSubtype);
-#endif
+
+UINT_16 rsnPmfCapableValidation(IN P_ADAPTER_T prAdapter,
+	IN P_BSS_INFO_T prBssInfo, IN P_STA_RECORD_T prStaRec);
+
+VOID rsnPmfGenerateTimeoutIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo);
+
+void rsnApStartSaQuery(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec);
+
+void rsnApSaQueryAction(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb);
+#endif  /* CFG_SUPPORT_802_11W */
+
 BOOLEAN rsnCheckSecurityModeChanged(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, P_BSS_DESC_T prBssDesc);
 BOOLEAN rsnParseOsenIE(P_ADAPTER_T prAdapter, struct IE_WFA_OSEN *prInfoElem, P_RSN_INFO_T prOsenInfo);
 

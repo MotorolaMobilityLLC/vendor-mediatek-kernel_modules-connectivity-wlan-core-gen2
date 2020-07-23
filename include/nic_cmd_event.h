@@ -910,7 +910,7 @@ typedef struct _CMD_UPDATE_STA_RECORD_T {
 	UINT_8 ucUapsdSp;	/* 0: all, 1: max 2, 2: max 4, 3: max 6 */
 	UINT_8 ucKeepAliveDuration; /* unit is 1s */
 	UINT_8 ucKeepAliveOption; /* only bit0 is used now */
-	UINT_8 aucReserved;
+	UINT_8 ucApplyPmf;
 	/* TBD */
 } CMD_UPDATE_STA_RECORD_T, *P_CMD_UPDATE_STA_RECORD_T;
 

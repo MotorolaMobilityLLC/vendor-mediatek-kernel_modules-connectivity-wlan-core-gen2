@@ -200,6 +200,37 @@ typedef struct _STAT_CNT_INFO_DRV_T {
 } STAT_CNT_INFO_DRV_T;
 
 
+#if CFG_SUPPORT_802_11W
+/* AP PMF */
+struct AP_PMF_CFG {
+	BOOLEAN fgMfpc;
+	BOOLEAN fgMfpr;
+	BOOLEAN fgSha256;
+	BOOLEAN fgAPApplyPmfReq;
+	BOOLEAN fgBipKeyInstalled;
+};
+
+struct STA_PMF_CFG {
+	BOOLEAN fgMfpc;
+	BOOLEAN fgMfpr;
+	BOOLEAN fgSha256;
+	BOOLEAN fgSaeRequireMfp;
+	BOOLEAN fgApplyPmf;
+	BOOLEAN fgBipKeyInstalled;
+
+	/* for certification 4.3.3.1, 4.3.3.2 TX unprotected deauth */
+	BOOLEAN fgRxDeauthResp;
+
+	/* For PMF SA query TX request retry a timer */
+	/* record the start time of 1st SAQ request */
+	UINT_32 u4SAQueryStart;
+	UINT_32 u4SAQueryCount;
+	UINT_8 ucSAQueryTimedOut; /* retry more than 1000ms */
+	TIMER_T rSAQueryTimer;
+	UINT_16 u2TransactionID;
+};
+#endif
+
 /* Define STA record structure */
 struct _STA_RECORD_T {
 	LINK_ENTRY_T rLinkEntry;
@@ -493,6 +524,10 @@ struct _STA_RECORD_T {
 
 	/* For Infra/GC Mode, a timer used to avoid the Deauth frame not be sent */
 	TIMER_T rDeauthTxDoneTimer;
+#if CFG_SUPPORT_802_11W
+	/* AP PMF */
+	struct STA_PMF_CFG rPmfCfg;
+#endif
 };
 
 #if 0
