@@ -598,6 +598,10 @@ typedef struct _WIFI_VAR_T {
 	UINT_8 aucCwMin[WMM_AC_INDEX_NUM];
 	UINT_16 au2CwMax[WMM_AC_INDEX_NUM];
 	UINT_16 au2TxOp[WMM_AC_INDEX_NUM];
+
+#if ARP_MONITER_ENABLE
+	UINT_32 u4ArpMoniterThreshold;
+#endif
 } WIFI_VAR_T, *P_WIFI_VAR_T;	/* end of _WIFI_VAR_T */
 
 /* cnm_timer module */

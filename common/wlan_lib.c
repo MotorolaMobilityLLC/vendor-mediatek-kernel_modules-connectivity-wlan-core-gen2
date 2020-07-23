@@ -5721,6 +5721,14 @@ VOID wlanCfgApply(IN P_ADAPTER_T prAdapter)
 		(UINT_16) wlanCfgGetUint32(prAdapter, "VoTxOp", 47);
 
 	prAdapter->prGlueInfo->i4Priority = wlanCfgGetInt32(prAdapter, "RTPri", 0);
+
+#if ARP_MONITER_ENABLE
+	prWifiVar->u4ArpMoniterThreshold = (UINT_32) wlanCfgGetUint32(
+			prAdapter, "ArpMoniterThreshold",
+			20); /*AP IOT issue: default=20*/
+	DBGLOG(INIT, TRACE,
+		"ArpMoniterThreshold=%d\n", prWifiVar->u4ArpMoniterThreshold);
+#endif
 	/* TODO: Apply other Config */
 }
 #endif /* CFG_SUPPORT_CFG_FILE */

@@ -4980,7 +4980,7 @@ VOID qmDetectArpNoResponse(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo)
 	arpOpCode = (pucData[ETH_TYPE_LEN_OFFSET + 8] << 8) | (pucData[ETH_TYPE_LEN_OFFSET + 8 + 1]);
 	if (arpOpCode == ARP_PRO_REQ) {
 		arpMoniter++;
-		if (arpMoniter > 20) {
+		if (arpMoniter > prAdapter->rWifiVar.u4ArpMoniterThreshold) {
 			DBGLOG(INIT, WARN, "IOT Critical issue, arp no resp, check AP!\n");
 			aisBssBeaconTimeout(prAdapter);
 			arpMoniter = 0;
